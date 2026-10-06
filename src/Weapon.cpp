@@ -15,7 +15,7 @@ void Weapon::Update(float deltaTime){
             vY=0.0f;
         }
         posY += vY * deltaTime;
-        if (posY >= 450.0f){ // Check has arrived at grass or not
+        if (posY >= 450.0f){ // middle of swords stop here indicating it reaches the grass
             posY = 450.0f;
             vY =0.0f;
             vX = pow(friction, deltaTime * 60) * vX; // vX will continue berguling
