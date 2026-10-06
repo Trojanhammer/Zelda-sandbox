@@ -1,22 +1,36 @@
 #pragma once
 #include <string>
+#include <vector>
+#include <utility>
 
 class Weapon{
     public:
         std::string name;
-        float posX;
-        float posY;
+        float baseposX =122;
+        float baseposY =394;   // Link's hand: his middle (100, 406) + (22, -12) = (122, 394)
+        float posX = baseposX;
+        float posY = baseposY;
         float vX =0;
         float vY =0;
+        float RecallClock =0.0f;
+        struct RecallPoint{
+            float posX;
+            float posY;
+            float time;
+        };
+        std::vector<RecallPoint> RecallCoord;
         enum State
         {
+            Start_Throw,
             Held,
             Thrown,
             Idle,
-            Recall
+            Recalling
         };
         State state = Held;
     public:
-        Weapon(std::string name,float posX, float posY);
+        Weapon(std::string name);
+        void Recall(float deltaTime);
+        void Update(float deltaTime);
         
 };

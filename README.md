@@ -33,5 +33,7 @@ Needs SDL2 (`brew install sdl2`). Esc quits.
 | `src/main.cpp` | Window, loop, input |
 | `src/Weapon.h/.cpp` | The sword: position, speed, state (held, thrown, idle, recall) |
 | `src/Player.h/.cpp` | The player holds the sword and throws it; the physics of the throw |
-| `src/graphics/` | Drawing only: ground, hand, a sword that turns, a marker |
+| `src/graphics/` | Drawing only: ground, hand, a sword that turns, a dotted aim line, a marker, and loading / drawing / turning sprites |
+| `assets/` | `link.png` (Link without a weapon) and `master-sword.png`, pixel art generated with AI and cleaned up (background removed, shrunk, 24 colors) |
+| `src/input/` | Gamepad: the left stick aims (as a throw angle), X throws, O recalls |
 | `src/ui/` | Text drawn with a small built-in 5x7 pixel font (no SDL_ttf) |
