@@ -17,6 +17,22 @@ namespace Gfx {
     // -1.5708 = pointing up. For a flying sword use atan2(speedY, speedX) so that it points the way it moves.
     void DrawSword(SDL_Renderer* renderer, float x, float y, float angle);
 
+    // A dotted line from (x, y) in the direction of angleDegrees (0 = right, 90 = up, 180 = left, the same as Throw()),
+    // with a bigger dot at the end. Shows where a throw would go.
+    void DrawAimLine(SDL_Renderer* renderer, float x, float y, float angleDegrees);
+
+    // Loads a picture (PNG) as a texture. Returns nullptr, and prints why on stderr, if the file is missing, so the game can
+    // still run and fall back to the rectangle drawings above. Free it with SDL_DestroyTexture before the renderer goes.
+    SDL_Texture* LoadTexture(SDL_Renderer* renderer, const char* path);
+
+    // Draws a picture with its MIDDLE at (x, y), `scale` times its own size (2.0 = twice as big). flipHorizontal = mirror it
+    // (Link faces right in the picture, so mirror it to make him face left). Does nothing if texture is nullptr.
+    void DrawSprite(SDL_Renderer* renderer, SDL_Texture* texture, float x, float y, float scale = 1.0f, bool flipHorizontal = false);
+
+    // Same, turned by angleRadians around its middle: 0 = as in the picture, positive turns clockwise on the screen.
+    // The sword picture points RIGHT, so atan2(speedY, speedX) makes it point the way it flies, like DrawSword does.
+    void DrawSpriteRotated(SDL_Renderer* renderer, SDL_Texture* texture, float x, float y, float angleRadians, float scale = 1.0f);
+
     // A small cross with its middle at (x, y). Handy to look at the recorded dots of a path.
     void DrawMarker(SDL_Renderer* renderer, float x, float y, SDL_Color color);
 }

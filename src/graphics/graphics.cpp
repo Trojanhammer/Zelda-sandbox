@@ -1,6 +1,9 @@
 #include "graphics.h"
 
+#include <SDL_image.h>
+
 #include <cmath>
+#include <cstdio>
 
 namespace {
     // Fills a rectangle that is turned by `angle` around its own middle. SDL's normal rectangles cannot turn,
@@ -42,6 +45,41 @@ void DrawSword(SDL_Renderer* renderer, float x, float y, float angle) {
     FillTurnedRect(renderer, x + 6 * c, y + 6 * s, 40, 6, angle, SDL_Color{170, 180, 195, 255});     // blade (centre 6 px ahead of the middle)
     FillTurnedRect(renderer, x - 20 * c, y - 20 * s, 12, 5, angle, SDL_Color{110, 70, 40, 255});     // handle
     FillTurnedRect(renderer, x - 14 * c, y - 14 * s, 3, 14, angle, SDL_Color{200, 170, 60, 255});    // guard, across the sword
+}
+
+void DrawAimLine(SDL_Renderer* renderer, float x, float y, float angleDegrees) {
+    float a = angleDegrees * 3.14159265f / 180.0f;
+    float dx = std::cos(a), dy = -std::sin(a);      // up on the screen is a smaller y, so the y part is flipped
+    SDL_SetRenderDrawColor(renderer, 200, 60, 60, 255);
+    for (int i = 1; i <= 5; i++) {                  // five dots, 18 px apart, starting 18 px from the hand
+        float px = x + dx * 18.0f * i, py = y + dy * 18.0f * i;
+        int size = (i == 5) ? 7 : 4;                // the last one is bigger: the "tip"
+        SDL_Rect dot = {(int)px - size / 2, (int)py - size / 2, size, size};
+        SDL_RenderFillRect(renderer, &dot);
+    }
+}
+
+SDL_Texture* LoadTexture(SDL_Renderer* renderer, const char* path) {
+    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");   // "nearest": pixel art stays sharp when it is scaled or turned
+    SDL_Texture* texture = IMG_LoadTexture(renderer, path);
+    if (texture == nullptr) std::fprintf(stderr, "could not load %s: %s\n", path, IMG_GetError());
+    return texture;
+}
+
+void DrawSpriteRotated(SDL_Renderer* renderer, SDL_Texture* texture, float x, float y, float angleRadians, float scale) {
+    if (texture == nullptr) return;
+    int w = 0, h = 0;
+    SDL_QueryTexture(texture, nullptr, nullptr, &w, &h);
+    SDL_FRect dst = {x - w * scale / 2, y - h * scale / 2, w * scale, h * scale};   // the middle of the picture lands on (x, y)
+    SDL_RenderCopyExF(renderer, texture, nullptr, &dst, angleRadians * 180.0 / 3.14159265, nullptr, SDL_FLIP_NONE);   // SDL wants degrees
+}
+
+void DrawSprite(SDL_Renderer* renderer, SDL_Texture* texture, float x, float y, float scale, bool flipHorizontal) {
+    if (texture == nullptr) return;
+    int w = 0, h = 0;
+    SDL_QueryTexture(texture, nullptr, nullptr, &w, &h);
+    SDL_FRect dst = {x - w * scale / 2, y - h * scale / 2, w * scale, h * scale};
+    SDL_RenderCopyExF(renderer, texture, nullptr, &dst, 0.0, nullptr, flipHorizontal ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE);
 }
 
 void DrawMarker(SDL_Renderer* renderer, float x, float y, SDL_Color color) {
