@@ -12,7 +12,9 @@ class Weapon{
         float posY = baseposY;
         float vX =0;
         float vY =0;
+        float RecallLimit = 3.0f;
         float RecallClock =0.0f;
+        float gravity = 980.0f; // 98px per second square
         struct RecallPoint{
             float posX;
             float posY;
@@ -22,6 +24,7 @@ class Weapon{
         enum State
         {
             Start_Throw,
+            Fall,
             Held,
             Thrown,
             Idle,
@@ -30,7 +33,8 @@ class Weapon{
         State state = Held;
     public:
         Weapon(std::string name);
-        void Recall(float deltaTime);
+        void Recall(float deltaTime,float PlayerposX);
         void Update(float deltaTime);
+        void Fallen(float deltaTime);
         
 };
