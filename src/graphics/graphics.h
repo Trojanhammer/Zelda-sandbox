@@ -33,6 +33,12 @@ namespace Gfx {
     // The sword picture points RIGHT, so atan2(speedY, speedX) makes it point the way it flies, like DrawSword does.
     void DrawSpriteRotated(SDL_Renderer* renderer, SDL_Texture* texture, float x, float y, float angleRadians, float scale = 1.0f);
 
+    // Link with moving legs. walking = false draws him standing (the picture as it is); walking = true swings his two legs
+    // while the body bobs. The swing follows how far he has walked (x), so his feet do not slide on the ground:
+    // one full step (both legs) per 80 px. flipHorizontal = face left (the legs then swing as if walking forward to the left).
+    // The numbers inside are measured on assets/link.png (55 x 112): legs start at row 73, the two legs are cut apart at column 28.
+    void DrawWalker(SDL_Renderer* renderer, SDL_Texture* texture, float x, float y, bool walking, bool flipHorizontal = false, float scale = 1.0f);
+
     // A small cross with its middle at (x, y). Handy to look at the recorded dots of a path.
     void DrawMarker(SDL_Renderer* renderer, float x, float y, SDL_Color color);
 }

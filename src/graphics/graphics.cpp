@@ -82,6 +82,53 @@ void DrawSprite(SDL_Renderer* renderer, SDL_Texture* texture, float x, float y, 
     SDL_RenderCopyExF(renderer, texture, nullptr, &dst, 0.0, nullptr, flipHorizontal ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE);
 }
 
+void DrawWalker(SDL_Renderer* renderer, SDL_Texture* texture, float x, float y, bool walking, bool flipHorizontal, float scale) {
+    if (texture == nullptr) return;
+    if (!walking) {
+        DrawSprite(renderer, texture, x, y, scale, flipHorizontal);
+        return;
+    }
+    int w = 0, h = 0;
+    SDL_QueryTexture(texture, nullptr, nullptr, &w, &h);
+
+    // Measured on assets/link.png (55 x 112), in picture pixels:
+    const int hipRow = 73;                 // from this row down it is legs, above it is the body (the tunic ends at row 72)
+    const int overlap = 2;                 // the legs start 2 rows higher and hide behind the tunic, so no gap shows when they turn
+    const int cutColumn = 28;              // back leg (left in the picture): columns 0..27, front leg: 28..54
+    const float hipBackX = 24, hipFrontX = 32;   // the point each leg swings around
+    const float strideLength = 80.0f;      // one full step (both legs) per 80 px walked: 150 px/s is about 2 steps a second
+    const float maxSwing = 22.0f;          // degrees
+    const float legLength = 38.0f;         // hip row 73 down to the bottom of the boot, row 111
+
+    float phase = (flipHorizontal ? -x : x) / strideLength * 2.0f * 3.14159265f;   // grows while he walks the way he faces
+    float swing = maxSwing * std::sin(phase);
+    float angleDegrees = std::fabs(swing);
+    // A turned leg is shorter on the screen (38 px * cos 22 degrees = 35 px), so the body goes down to keep the feet on the ground
+    float drop = legLength * (1.0f - std::cos(angleDegrees * 3.14159265f / 180.0f));
+
+    float left = x - w * scale / 2;
+    float top = y - h * scale / 2 + drop * scale;
+
+    struct Leg { int srcX, srcW; float hipX; float angle; };
+    Leg legs[2] = {
+        {0, cutColumn, hipBackX, swing},                   // back leg swings one way ...
+        {cutColumn, w - cutColumn, hipFrontX, -swing},     // ... the front leg the other way
+    };
+    int legTop = hipRow - overlap;
+    for (const Leg& leg : legs) {
+        SDL_Rect src = {leg.srcX, legTop, leg.srcW, h - legTop};
+        float dstX = flipHorizontal ? left + (w - leg.srcX - leg.srcW) * scale : left + leg.srcX * scale;
+        SDL_FRect dst = {dstX, top + legTop * scale, leg.srcW * scale, (h - legTop) * scale};
+        SDL_FPoint hip = {(flipHorizontal ? leg.srcX + leg.srcW - leg.hipX : leg.hipX - leg.srcX) * scale, (hipRow - legTop) * scale};
+        double angle = flipHorizontal ? -leg.angle : leg.angle;
+        SDL_RenderCopyExF(renderer, texture, &src, &dst, angle, &hip, flipHorizontal ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE);
+    }
+    // the body goes on top of the legs
+    SDL_Rect bodySrc = {0, 0, w, hipRow};
+    SDL_FRect bodyDst = {left, top, w * scale, hipRow * scale};
+    SDL_RenderCopyExF(renderer, texture, &bodySrc, &bodyDst, 0.0, nullptr, flipHorizontal ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE);
+}
+
 void DrawMarker(SDL_Renderer* renderer, float x, float y, SDL_Color color) {
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
     SDL_RenderDrawLine(renderer, (int)x - 3, (int)y, (int)x + 3, (int)y);
