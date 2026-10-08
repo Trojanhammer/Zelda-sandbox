@@ -7,6 +7,7 @@ class Player{
         float posY = 406;   // 462 (the ground surface) - 56 (half of Link's 112 px): his feet touch the ground
         float throwing_speed = 800; // 800px/s
         float walking_speed = 150;
+        static constexpr float mass = 70.0f;
         static constexpr float HandX = 22.0f; // distance between link pos to its hand(sword)
         static constexpr float HandY = -12.0f;
         enum State {
