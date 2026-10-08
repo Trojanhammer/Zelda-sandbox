@@ -16,7 +16,7 @@ A 2D sandbox for the mechanics of *Tears of the Kingdom* and *Breath of the Wild
 
 | Mechanic | Status |
 |---|---|
-| Recall: throw a sword, then call it back along the way it came | done: aim and throw, rewind along the path it flew (in the air or from the grass), the sword falls if you walked away, and you can pick it up again. Still to do: the recall effects (see below) |
+| Recall: throw a sword, then call it back along the way it came | done: aim and throw, rewind along the path it flew (in the air or from the grass), the sword falls if you walked away, and you can pick it up again. With a simple recall effect |
 | Updraft: fire heats the air above it and lifts things up | planned (Link can walk now, which this one needed) |
 | Magnesis: move a metal object with the stick | planned |
 
@@ -29,9 +29,9 @@ These three come first, each in its own sandbox. After that, more mechanics from
 - The recall works for 3 seconds after the throw began, and the flight counts: a 1.4 s flight leaves about 1.6 s after it lands. After that the path is forgotten and the button does nothing. A sword that lies still does not make the rewind wait.
 - Walk up to a sword lying on the ground (within 50 px) to pick it up: it jumps into his hand and the old path is cleared.
 
-### Recall effects (not built yet)
+### Recall effect
 
-In *Tears of the Kingdom* a recalled object also plays animations and visual effects (a glow, for example) so you can see that it is being recalled. Here the sword only moves back, with no effect yet. The dots needed to draw a trail along the path are already recorded, so adding one is mostly a graphics job.
+*Tears of the Kingdom* shows an effect on a recalled object. This is a simple version: a golden rim on the sword, a see-through copy where it will end up, and a golden line along the path back.
 
 ## Build and run
 

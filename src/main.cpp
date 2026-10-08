@@ -16,6 +16,7 @@ int main(int argc, char* argv[]) {
     auto MainPlayer = std::make_unique<Player>(Weapon("Master Sword"));
     SDL_Texture* linkTexture = Gfx::LoadTexture(renderer, "assets/link.png");           // loaded once; nullptr (nothing drawn) if the file is missing
     SDL_Texture* swordTexture = Gfx::LoadTexture(renderer, "assets/master-sword.png");
+    SDL_Texture* swordGlow = Gfx::LoadSilhouette(renderer, "assets/master-sword.png", SDL_Color{255, 205, 40, 255});   // the same shape in flat yellow, for the recall glow
     bool running = true;
     SDL_Event event;
     float angleDegrees=0.0f;
@@ -105,6 +106,13 @@ int main(int argc, char* argv[]) {
         if(MainPlayer -> weapon.state == Weapon::Held){
             Gfx::DrawAimLine(renderer, MainPlayer -> weapon.posX, MainPlayer -> weapon.posY, angleDegrees);
         }
+        if(MainPlayer -> weapon.state == Weapon::Recalling){   // glow + the path back, behind the sword
+            std::vector<SDL_FPoint> pathBack;                  // the recorded dots from the start of the throw up to where the sword is now
+            for(const auto& dot : MainPlayer -> weapon.RecallCoord){
+                if(dot.time <= MainPlayer -> weapon.RecallClock) pathBack.push_back({dot.posX, dot.posY});
+            }
+            Gfx::DrawRecallEffect(renderer, swordGlow, MainPlayer -> weapon.posX, MainPlayer -> weapon.posY, swordAngle, pathBack);
+        }
         Gfx::DrawSpriteRotated(renderer, swordTexture, MainPlayer -> weapon.posX, MainPlayer -> weapon.posY, swordAngle);
         UI::DrawText(renderer, Gamepad::Connected() ? "CONTROLLER OK" : "NO CONTROLLER", 20, 20, 2, UI::DARK);
         UI::DrawTextCentered(renderer, "RECALL", Gfx::WINDOW_W / 2, 10, 2, UI::DARK);
@@ -114,6 +122,7 @@ int main(int argc, char* argv[]) {
     }
     SDL_DestroyTexture(linkTexture);     // before the renderer goes away
     SDL_DestroyTexture(swordTexture);
+    SDL_DestroyTexture(swordGlow);
     Gamepad::Quit();
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);

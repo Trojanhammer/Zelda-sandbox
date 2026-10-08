@@ -129,6 +129,73 @@ void DrawWalker(SDL_Renderer* renderer, SDL_Texture* texture, float x, float y, 
     SDL_RenderCopyExF(renderer, texture, &bodySrc, &bodyDst, 0.0, nullptr, flipHorizontal ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE);
 }
 
+SDL_Texture* LoadSilhouette(SDL_Renderer* renderer, const char* path, SDL_Color color) {
+    SDL_Surface* loaded = IMG_Load(path);
+    if (loaded == nullptr) {
+        std::fprintf(stderr, "could not load %s: %s\n", path, IMG_GetError());
+        return nullptr;
+    }
+    SDL_Surface* rgba = SDL_ConvertSurfaceFormat(loaded, SDL_PIXELFORMAT_RGBA32, 0);   // bytes in memory: R, G, B, A
+    SDL_FreeSurface(loaded);
+    if (rgba == nullptr) return nullptr;
+    for (int y = 0; y < rgba->h; y++) {
+        for (int x = 0; x < rgba->w; x++) {
+            Uint8* pixel = (Uint8*)rgba->pixels + y * rgba->pitch + x * 4;
+            pixel[0] = color.r;   // paint it, but leave pixel[3] (the alpha) alone, so the shape stays
+            pixel[1] = color.g;
+            pixel[2] = color.b;
+        }
+    }
+    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
+    SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, rgba);
+    SDL_FreeSurface(rgba);
+    if (texture != nullptr) SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+    return texture;
+}
+
+void DrawRecallEffect(SDL_Renderer* renderer, SDL_Texture* silhouette, float swordX, float swordY, float swordAngle, const std::vector<SDL_FPoint>& path) {
+    if (silhouette == nullptr) return;
+    const float pi = 3.14159265f;
+    float t = SDL_GetTicks() / 1000.0f;   // only used to make the glow flicker
+
+    // 1. the path it goes back along: a bright thin line, with a soft wider one behind it
+    std::vector<SDL_FPoint> line = path;
+    line.push_back({swordX, swordY});
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    for (size_t i = 0; i + 1 < line.size(); i++) {
+        SDL_SetRenderDrawColor(renderer, 255, 200, 40, 70);
+        for (int dy = -1; dy <= 1; dy++) {
+            for (int dx = -1; dx <= 1; dx++) {
+                if (dx != 0 || dy != 0) SDL_RenderDrawLineF(renderer, line[i].x + dx, line[i].y + dy, line[i + 1].x + dx, line[i + 1].y + dy);
+            }
+        }
+        SDL_SetRenderDrawColor(renderer, 255, 190, 20, 235);
+        SDL_RenderDrawLineF(renderer, line[i].x, line[i].y, line[i + 1].x, line[i + 1].y);
+    }
+
+    // 2. the see-through copy where it will end up (the first dot), pointing the way it was thrown
+    if (!path.empty()) {
+        float angle = 0.0f;
+        if (path.size() >= 2) angle = std::atan2(path[1].y - path[0].y, path[1].x - path[0].x);
+        float pulse = 0.5f + 0.5f * std::sin(t * 6.0f);
+        SDL_SetTextureAlphaMod(silhouette, (Uint8)(90 + 60 * pulse));
+        DrawSpriteRotated(renderer, silhouette, path[0].x, path[0].y, angle);
+    }
+
+    // 3. the rim: copies of the silhouette a few pixels around the sword (a sharp ring and a soft one). Each copy flickers
+    //    by itself, so the rim crackles a little like the one in the game.
+    for (int ring = 0; ring < 2; ring++) {
+        float radius = (ring == 0) ? 2.0f : 4.5f;
+        SDL_SetTextureAlphaMod(silhouette, (ring == 0) ? 255 : 80);
+        for (int k = 0; k < 8; k++) {
+            float a = k * pi / 4;
+            float r = radius + std::sin(t * 40.0f + k * 1.7f + ring);
+            DrawSpriteRotated(renderer, silhouette, swordX + r * std::cos(a), swordY + r * std::sin(a), swordAngle);
+        }
+    }
+    SDL_SetTextureAlphaMod(silhouette, 255);
+}
+
 void DrawMarker(SDL_Renderer* renderer, float x, float y, SDL_Color color) {
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
     SDL_RenderDrawLine(renderer, (int)x - 3, (int)y, (int)x + 3, (int)y);

@@ -1,5 +1,6 @@
 #pragma once
 #include <SDL.h>
+#include <vector>
 
 // Everything that only draws. None of it moves or decides anything: you give it a position and it paints.
 // Coordinates are pixels in the window (960 x 540): x grows to the right, y grows DOWNWARDS, (0,0) is the top-left corner.
@@ -38,6 +39,16 @@ namespace Gfx {
     // one full step (both legs) per 80 px. flipHorizontal = face left (the legs then swing as if walking forward to the left).
     // The numbers inside are measured on assets/link.png (55 x 112): legs start at row 73, the two legs are cut apart at column 28.
     void DrawWalker(SDL_Renderer* renderer, SDL_Texture* texture, float x, float y, bool walking, bool flipHorizontal = false, float scale = 1.0f);
+
+    // Loads a picture like LoadTexture, but every visible pixel gets one colour (the see-through parts stay see-through): a flat
+    // silhouette of the picture. DrawRecallEffect uses it for the glow. Returns nullptr, and prints why, if the file is missing.
+    SDL_Texture* LoadSilhouette(SDL_Renderer* renderer, const char* path, SDL_Color color);
+
+    // The look of a recall, a simple version of the one in the game: a flickering yellow rim around the sword, a see-through
+    // copy of it where it will end up, and the line of the path it goes back along. `path` = the recorded dots from where the
+    // throw began up to where the sword is now, in that order. `silhouette` comes from LoadSilhouette. Call it BEFORE drawing
+    // the sword itself, so the rim sits behind it. Does nothing if silhouette is nullptr.
+    void DrawRecallEffect(SDL_Renderer* renderer, SDL_Texture* silhouette, float swordX, float swordY, float swordAngle, const std::vector<SDL_FPoint>& path);
 
     // A small cross with its middle at (x, y). Handy to look at the recorded dots of a path.
     void DrawMarker(SDL_Renderer* renderer, float x, float y, SDL_Color color);
