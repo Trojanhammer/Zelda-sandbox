@@ -2,6 +2,7 @@
 
 #include <SDL_image.h>
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 
@@ -22,6 +23,48 @@ namespace {
         }
         const int indices[6] = {0, 1, 2, 0, 2, 3};
         SDL_RenderGeometry(renderer, nullptr, v, 4, indices, 6);
+    }
+
+    // A filled ellipse made of a fan of triangles (SDL has no ellipse). A circle when rx == ry.
+    void FillEllipse(SDL_Renderer* renderer, float cx, float cy, float rx, float ry, SDL_Color color) {
+        const int segments = 28;
+        SDL_Vertex v[segments + 2];
+        v[0].position = {cx, cy};
+        v[0].color = color;
+        v[0].tex_coord = {0, 0};
+        for (int i = 0; i <= segments; i++) {
+            float a = i * 2.0f * 3.14159265f / segments;
+            v[i + 1].position = {cx + rx * std::cos(a), cy + ry * std::sin(a)};
+            v[i + 1].color = color;
+            v[i + 1].tex_coord = {0, 0};
+        }
+        int indices[segments * 3];
+        for (int i = 0; i < segments; i++) {
+            indices[i * 3] = 0;
+            indices[i * 3 + 1] = i + 1;
+            indices[i * 3 + 2] = i + 2;
+        }
+        SDL_RenderGeometry(renderer, nullptr, v, segments + 2, indices, segments * 3);
+    }
+
+    // One tongue of flame standing on the ground at baseX: wide at the bottom, a tip at the top. `sway` pushes the tip sideways.
+    void FillFlameTongue(SDL_Renderer* renderer, float baseX, float groundY, float halfWidth, float height, float sway, SDL_Color color) {
+        SDL_FPoint p[6] = {
+            {baseX, groundY - height * 0.15f},                              // 0 the middle of the base (the fan starts here)
+            {baseX - halfWidth, groundY},                                   // 1 bottom left
+            {baseX - halfWidth * 0.85f + sway * 0.4f, groundY - height * 0.45f},   // 2 left side
+            {baseX + sway, groundY - height},                               // 3 the tip
+            {baseX + halfWidth * 0.85f + sway * 0.4f, groundY - height * 0.45f},   // 4 right side
+            {baseX + halfWidth, groundY},                                   // 5 bottom right
+        };
+        SDL_Vertex v[6];
+        for (int i = 0; i < 6; i++) {
+            v[i].position = p[i];
+            v[i].color = color;
+            v[i].tex_coord = {0, 0};
+        }
+        const int indices[12] = {0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 5};
+        SDL_RenderGeometry(renderer, nullptr, v, 6, indices, 12);
     }
 }
 
@@ -194,6 +237,83 @@ void DrawRecallEffect(SDL_Renderer* renderer, SDL_Texture* silhouette, float swo
         }
     }
     SDL_SetTextureAlphaMod(silhouette, 255);
+}
+
+void DrawFire(SDL_Renderer* renderer, SDL_Texture* flame, float x, float groundY, float radius, float intensity) {
+    intensity = std::clamp(intensity, 0.0f, 1.0f);
+    float t = SDL_GetTicks() / 1000.0f;                 // only used to make the flame flicker
+    float scale = 0.25f + 0.75f * intensity;            // a weak fire is a quarter of the size, a strong one fills the circle
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
+    // the ring on the grass: how far the updraft reaches (a flat ellipse, drawn as a circle seen from the side)
+    FillEllipse(renderer, x, groundY, radius, radius * 0.16f, SDL_Color{60, 40, 30, (Uint8)(60 + 60 * intensity)});
+
+    float flicker = 1.0f + 0.05f * std::sin(t * 17.0f) + 0.03f * std::sin(t * 29.0f);
+    if (flame != nullptr) {
+        int w = 0, h = 0;
+        SDL_QueryTexture(flame, nullptr, nullptr, &w, &h);
+        float width = 2.0f * radius * scale;
+        float height = width * h / w * flicker;          // the picture keeps its shape; the height wobbles a little
+        SDL_FRect dst = {x - width / 2, groundY - height, width, height};   // the bottom edge of the picture is on the ground
+        SDL_RenderCopyF(renderer, flame, nullptr, &dst);
+        return;
+    }
+
+    // no picture: three tongues, each in three layers (red outside, orange, a yellow core)
+    const SDL_Color layerColor[3] = {{225, 60, 30, 235}, {255, 150, 30, 245}, {255, 232, 110, 255}};
+    const float layerWidth[3] = {1.0f, 0.68f, 0.38f};
+    const float layerHeight[3] = {1.0f, 0.78f, 0.52f};
+    const float tongueOffset[3] = {-0.58f, 0.0f, 0.58f};     // left, middle, right
+    const float tongueHeight[3] = {0.62f, 1.0f, 0.7f};
+    for (int layer = 0; layer < 3; layer++) {
+        for (int k = 0; k < 3; k++) {
+            float halfWidth = radius * scale * 0.5f * layerWidth[layer];
+            float height = radius * 2.2f * scale * tongueHeight[k] * layerHeight[layer] * flicker;
+            float sway = radius * scale * 0.18f * std::sin(t * (9.0f + 3 * k) + k * 2.1f);
+            FillFlameTongue(renderer, x + tongueOffset[k] * radius * scale * 0.9f, groundY, halfWidth, height, sway, layerColor[layer]);
+        }
+    }
+}
+
+void DrawUpdraftColumn(SDL_Renderer* renderer, float x, float groundY, float radius, float columnHeight, float intensity) {
+    intensity = std::clamp(intensity, 0.0f, 1.0f);
+    if (intensity <= 0.0f) return;
+    float t = SDL_GetTicks() / 1000.0f;
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
+    // the zone the updraft fills: a very faint box
+    SDL_SetRenderDrawColor(renderer, 255, 190, 110, (Uint8)(28 * intensity));
+    SDL_FRect zone = {x - radius, groundY - columnHeight, 2.0f * radius, columnHeight};
+    SDL_RenderFillRectF(renderer, &zone);
+
+    // streaks of rising air: each one has its own starting height, moves up and fades near the top
+    const int streaks = 12;
+    float speed = 60.0f + 160.0f * intensity;            // px per second: stronger air moves faster
+    for (int i = 0; i < streaks; i++) {
+        float sx = x - radius + (i + 0.5f) * (2.0f * radius / streaks);
+        float phase = std::fmod(i * 0.61803f, 1.0f);      // spreads the starting heights without using random numbers
+        float up = std::fmod(t * speed + phase * columnHeight, columnHeight);
+        float fade = 1.0f - up / columnHeight;
+        float length = 12.0f + 16.0f * intensity;
+        SDL_SetRenderDrawColor(renderer, 255, 215, 150, (Uint8)(170 * intensity * fade));
+        SDL_FRect streak = {sx - 1.0f, groundY - up - length, 2.0f, length};
+        SDL_RenderFillRectF(renderer, &streak);
+    }
+}
+
+void DrawFireball(SDL_Renderer* renderer, SDL_Texture* fireball, float x, float y, float angle) {
+    if (fireball != nullptr) {
+        DrawSpriteRotated(renderer, fireball, x, y, angle);
+        return;
+    }
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    float c = std::cos(angle), s = std::sin(angle);
+    for (int i = 4; i >= 1; i--) {                       // the tail: smaller and fainter circles behind the ball
+        float back = i * 7.0f;
+        FillEllipse(renderer, x - c * back, y - s * back, 9.0f - i * 1.5f, 9.0f - i * 1.5f, SDL_Color{240, 100, 30, (Uint8)(210 - i * 40)});
+    }
+    FillEllipse(renderer, x, y, 10.0f, 10.0f, SDL_Color{255, 150, 30, 255});     // the ball
+    FillEllipse(renderer, x + c * 1.5f, y + s * 1.5f, 5.5f, 5.5f, SDL_Color{255, 235, 120, 255});   // its hot core
 }
 
 void DrawMarker(SDL_Renderer* renderer, float x, float y, SDL_Color color) {

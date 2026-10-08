@@ -50,6 +50,20 @@ namespace Gfx {
     // the sword itself, so the rim sits behind it. Does nothing if silhouette is nullptr.
     void DrawRecallEffect(SDL_Renderer* renderer, SDL_Texture* silhouette, float swordX, float swordY, float swordAngle, const std::vector<SDL_FPoint>& path);
 
+    // The fire on the ground for the updraft. Its base sits at (x, groundY); `radius` is half of its width on the grass (50 for a
+    // circle of 100 px). `intensity` runs from 0 to 1 (how strong the updraft is right now, force / max force): a weak fire is
+    // small and a strong one fills the circle. `flame` is the flame picture (its bottom edge is put on the ground), or nullptr
+    // to draw a flame from triangles. Also draws a flat ring on the grass that shows how far the updraft reaches.
+    void DrawFire(SDL_Renderer* renderer, SDL_Texture* flame, float x, float groundY, float radius, float intensity);
+
+    // The rising air above the fire: a faint column and streaks that move up, faster and brighter when the updraft is
+    // stronger. columnHeight is how far up it reaches (px). Draw it BEFORE the things that are lifted.
+    void DrawUpdraftColumn(SDL_Renderer* renderer, float x, float groundY, float radius, float columnHeight, float intensity);
+
+    // What is thrown: the fireball picture turned along its flight (the picture points RIGHT with its tail on the left, like the
+    // sword: angle = atan2(speedY, speedX)), or nullptr to draw a ball of fire with a tail.
+    void DrawFireball(SDL_Renderer* renderer, SDL_Texture* fireball, float x, float y, float angle);
+
     // A small cross with its middle at (x, y). Handy to look at the recorded dots of a path.
     void DrawMarker(SDL_Renderer* renderer, float x, float y, SDL_Color color);
 }
