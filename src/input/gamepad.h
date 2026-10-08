@@ -1,8 +1,8 @@
 #pragma once
 #include <SDL.h>
 
-// DualSense (or any gamepad) for the sandbox: the left stick aims, X throws, O recalls.
-// SDL calls the cross button "A" and the circle button "B" (it names buttons by their place on an Xbox pad).
+// DualSense (or any gamepad) for the sandbox: the left stick aims, X throws the sword, O recalls it, square throws a fire.
+// SDL calls the cross button "A", the circle button "B" and the square button "X" (it names buttons by their place on an Xbox pad).
 namespace Gamepad {
     // Call once after SDL_Init(... | SDL_INIT_GAMECONTROLLER): opens the pads that are already plugged in.
     void Init();
@@ -21,7 +21,8 @@ namespace Gamepad {
     //     float a; if (Gamepad::AimAngle(a)) angleDegrees = a;
     bool AimAngle(float& degrees);
 
-    enum Action { NoAction, ThrowAction, RecallAction };
-    // What a button press asks for: X = ThrowAction, O = RecallAction, anything else (or not a button press) = NoAction.
+    enum Action { NoAction, ThrowAction, RecallAction, FireAction };
+    // What a button press asks for: X (cross) = ThrowAction, O (circle) = RecallAction, square = FireAction,
+    // anything else (or not a button press) = NoAction.
     Action ActionFromEvent(const SDL_Event& event);
 }
