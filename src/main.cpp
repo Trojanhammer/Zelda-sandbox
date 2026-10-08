@@ -2,6 +2,7 @@
 #include "graphics/graphics.h"
 #include "ui/ui.h"
 #include "input/gamepad.h"
+#include "Fire.h"
 
 #include <SDL.h>
 #include <memory>
@@ -13,7 +14,7 @@ int main(int argc, char* argv[]) {
     SDL_Window* window = SDL_CreateWindow("Zelda sandbox", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                                           Gfx::WINDOW_W, Gfx::WINDOW_H, SDL_WINDOW_SHOWN);
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    auto MainPlayer = std::make_unique<Player>(Weapon("Master Sword"));
+    auto MainPlayer = std::make_unique<Player>(Weapon());
     SDL_Texture* linkTexture = Gfx::LoadTexture(renderer, "assets/link.png");           // loaded once; nullptr (nothing drawn) if the file is missing
     SDL_Texture* swordTexture = Gfx::LoadTexture(renderer, "assets/master-sword.png");
     SDL_Texture* swordGlow = Gfx::LoadSilhouette(renderer, "assets/master-sword.png", SDL_Color{255, 205, 40, 255});   // the same shape in flat yellow, for the recall glow
@@ -21,7 +22,7 @@ int main(int argc, char* argv[]) {
     SDL_Event event;
     float angleDegrees=0.0f;
     bool PathChoice = true; // true to the right and vice versa
-
+    std::unique_ptr<Fire>fire = nullptr;
     auto lastTime = std::chrono::high_resolution_clock::now();
     while (running) {
         float deltaTime = std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - lastTime).count();
@@ -35,7 +36,10 @@ int main(int argc, char* argv[]) {
             else if(action == Gamepad::RecallAction && (MainPlayer -> weapon.state == Weapon::Thrown || MainPlayer -> weapon.state == Weapon::Idle) && (!MainPlayer -> weapon.RecallCoord.empty())){
                 MainPlayer -> weapon.state = Weapon::Recalling;
             }
-
+            else if(action == Gamepad::FireAction){
+                fire = std::make_unique<Fire>();
+            }
+            // set fire(initialize the obj)
             if (event.type == SDL_QUIT || (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)) {
                 running = false;
             }
@@ -68,11 +72,30 @@ int main(int argc, char* argv[]) {
             MainPlayer -> RightWalk = PathChoice;
             MainPlayer -> Walking(deltaTime);
         }
+        if(fire!= nullptr && fire -> state == Fire::Start_Throw){
+            fire -> posX = MainPlayer -> posX + MainPlayer -> HandX;
+            fire -> posY = MainPlayer -> posY + MainPlayer -> HandY;
+            MainPlayer -> Throw(angleDegrees,*fire);
+            fire -> state = Fire::Thrown;
+        }
+        else if(fire != nullptr && fire -> state == Fire::Thrown){
+            fire -> Update(deltaTime);
+            if(fire -> vX ==0 && fire -> vY ==0){
+                fire -> state = Fire::Firing;
+                //updraft starts
+            }
+        }
         if(MainPlayer -> weapon.state == Weapon::Start_Throw){
-            MainPlayer -> Throw(angleDegrees);
+            MainPlayer -> Throw(angleDegrees,MainPlayer -> weapon);
+            MainPlayer -> weapon.state = Weapon::Thrown;
         }
         else if(MainPlayer -> weapon.state == Weapon::Thrown){
+            MainPlayer -> weapon.RecallCoord.push_back({MainPlayer -> weapon.posX,MainPlayer -> weapon.posY, MainPlayer -> weapon.RecallClock});
             MainPlayer -> weapon.Update(deltaTime);
+            if((MainPlayer -> weapon.vX ==0) && (MainPlayer -> weapon.vY ==0)){
+                MainPlayer -> weapon.state = Weapon::Idle;
+            }
+            MainPlayer -> weapon.RecallClock +=deltaTime;
         }
         else if(MainPlayer -> weapon.state == Weapon::Recalling){
             MainPlayer -> weapon.Recall(deltaTime,MainPlayer -> posX);

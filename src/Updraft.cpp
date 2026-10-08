@@ -3,13 +3,13 @@
 
 void Updraft::Update(float deltaTime){
     max_duration -= deltaTime;
-    if(max_duration <=0){
+    if(max_duration <=0){ // Start Decayed
         if(!decayStarted){
             updraft_force = gravity_force;
             decayStarted = true;
         }
         updraft_force *= std::pow(0.8, deltaTime); 
-        netforce = updraft_force - gravity_force;
+        netforce = updraft_force - gravity_force; // netforce will be negative here
         vY -= (netforce * deltaTime) / player -> mass * 100; // 1 meter is 100px.bcs without * 100, it is in m/s not px/s
         player -> posY += vY * deltaTime;
 
@@ -21,14 +21,14 @@ void Updraft::Update(float deltaTime){
         return;
     }
     updraft_force += accumulationRate * deltaTime;
-    if(updraft_force >= maxUpdraftForce && max_duration > 0){
+    if(updraft_force >= maxUpdraftForce && max_duration > 0){ // Set limit so player will floating on the air
         updraft_force = maxUpdraftForce;
         vY = 0;
         player -> posY += vY * deltaTime;
         return;
     }
     netforce = updraft_force - gravity_force;
-    if(netforce > 0){
+    if(netforce > 0){ // Only started floating upwards once force is greater than gravity
         vY -= (netforce * deltaTime) / 70 * 100; // 70 is mass
         player -> posY += vY * deltaTime;
     }

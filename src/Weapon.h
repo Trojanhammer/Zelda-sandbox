@@ -3,18 +3,15 @@
 #include <vector>
 #include <utility>
 
-class Weapon{
+#include "PhysicsObject.h"
+
+class Weapon : public PhysicsObject{
     public:
-        std::string name;
+        std::string name = "Master Sword";
         float baseposX =122;
         float baseposY =394;   // Link's hand: his middle (100, 406) + (22, -12) = (122, 394)
-        float posX = baseposX;
-        float posY = baseposY;
-        float vX =0;
-        float vY =0;
         float RecallLimit = 3.0f;
         float RecallClock =0.0f;
-        float gravity = 980.0f; // 98px per second square
         struct RecallPoint{
             float posX;
             float posY;
@@ -32,9 +29,9 @@ class Weapon{
         };
         State state = Held;
     public:
-        Weapon(std::string name);
+        Weapon();
         void Recall(float deltaTime,float PlayerposX);
-        void Update(float deltaTime);
+        //void Update(float deltaTime);
         void Fallen(float deltaTime);
         
 };

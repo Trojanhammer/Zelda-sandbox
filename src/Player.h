@@ -1,10 +1,9 @@
 #pragma once
 #include "Weapon.h"
+#include "PhysicsObject.h"
 
-class Player{
+class Player : public PhysicsObject {
     public:
-        float posX = 100;
-        float posY = 406;   // 462 (the ground surface) - 56 (half of Link's 112 px): his feet touch the ground
         float throwing_speed = 800; // 800px/s
         float walking_speed = 150;
         static constexpr float mass = 70.0f;
@@ -19,9 +18,8 @@ class Player{
         std::string name = "Link";
         Weapon weapon; // store weapon object inside player obj instead of ptr since no need to do so
     public:
-        Player(Weapon weapon) : weapon(weapon){
-        }
-        void Throw(float angleDegrees);
+        Player(Weapon weapon);
+        void Throw(float angleDegrees, PhysicsObject& obj);
         void Walking(float deltaTime);
         void Pickup(float handX, float handY);
 };
