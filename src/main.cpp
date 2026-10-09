@@ -18,11 +18,14 @@ int main(int argc, char* argv[]) {
     SDL_Texture* linkTexture = Gfx::LoadTexture(renderer, "assets/link.png");           // loaded once; nullptr (nothing drawn) if the file is missing
     SDL_Texture* swordTexture = Gfx::LoadTexture(renderer, "assets/master-sword.png");
     SDL_Texture* swordGlow = Gfx::LoadSilhouette(renderer, "assets/master-sword.png", SDL_Color{255, 205, 40, 255});   // the same shape in flat yellow, for the recall glow
+    SDL_Texture* flameTexture = Gfx::LoadTexture(renderer, "assets/flame.png");         // the fire on the grass
+    SDL_Texture* fireballTexture = Gfx::LoadTexture(renderer, "assets/fireball.png");   // what is thrown
     bool running = true;
     SDL_Event event;
     float angleDegrees=0.0f;
     bool PathChoice = true; // true to the right and vice versa
     std::unique_ptr<Fire>fire = nullptr;
+    std::unique_ptr<Updraft>updraft = nullptr;
     auto lastTime = std::chrono::high_resolution_clock::now();
     while (running) {
         float deltaTime = std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - lastTime).count();
@@ -72,19 +75,35 @@ int main(int argc, char* argv[]) {
             MainPlayer -> RightWalk = PathChoice;
             MainPlayer -> Walking(deltaTime);
         }
-        if(fire!= nullptr && fire -> state == Fire::Start_Throw){
-            fire -> posX = MainPlayer -> posX + MainPlayer -> HandX;
-            fire -> posY = MainPlayer -> posY + MainPlayer -> HandY;
-            MainPlayer -> Throw(angleDegrees,*fire);
-            fire -> state = Fire::Thrown;
-        }
-        else if(fire != nullptr && fire -> state == Fire::Thrown){
-            fire -> Update(deltaTime);
-            if(fire -> vX ==0 && fire -> vY ==0){
-                fire -> state = Fire::Firing;
-                //updraft starts
+        if(fire!=nullptr){
+            if(fire -> state == Fire::Start_Throw){
+                fire -> posX = MainPlayer -> posX + MainPlayer -> HandX;
+                fire -> posY = MainPlayer -> posY + MainPlayer -> HandY;
+                MainPlayer -> Throw(angleDegrees,*fire);
+                fire -> state = Fire::Thrown; 
+            }
+            else if(fire -> state == Fire::Thrown){
+                fire -> Update(deltaTime);
+                if(fire -> vX ==0 && fire -> vY ==0){
+                    fire -> state = Fire::Firing;
+                if(!fire -> isUpDraft){
+                    updraft = std::make_unique<Updraft>();             
+                }
+            }
+            }
+            else if(fire -> state == Fire::Firing){
+                updraft -> Update(deltaTime);
+                if(std::abs(fire -> posX - MainPlayer -> posX) <= 10){
+                    updraft -> Push(deltaTime,*MainPlayer);
+                }
+                if(updraft -> isFinished){
+                    fire.reset();
+                    updraft.reset();
+                    // delete both fire object and pointer here/
+            }
             }
         }
+        
         if(MainPlayer -> weapon.state == Weapon::Start_Throw){
             MainPlayer -> Throw(angleDegrees,MainPlayer -> weapon);
             MainPlayer -> weapon.state = Weapon::Thrown;
@@ -121,7 +140,18 @@ int main(int argc, char* argv[]) {
         SDL_RenderClear(renderer);
 
         Gfx::DrawGround(renderer, 462);   // the sword lands with its middle at y = 450 (Weapon.cpp) and is 25 px tall, so the surface is at 462
+        if(fire != nullptr && fire -> state == Fire::Firing && updraft != nullptr){   // the fire on the grass and its rising air, behind Link
+            // How strong it looks, 0 to 1. While it fades the force starts at his weight (686), so measure it against that and not
+            // against the maximum, otherwise the flame would jump from full to two thirds at 10 s.
+            float intensity = updraft -> decayStarted ? updraft -> updraft_force / Updraft::gravity_force
+                                                      : updraft -> updraft_force / Updraft::maxUpdraftForce;
+            Gfx::DrawUpdraftColumn(renderer, fire -> posX, 462, 50, 250, intensity);
+            Gfx::DrawFire(renderer, flameTexture, fire -> posX, 462, 50, intensity);
+        }
         Gfx::DrawWalker(renderer, linkTexture, MainPlayer -> posX, MainPlayer -> posY, MainPlayer -> state == Player::Walk);   // legs swing while he walks
+        if(fire != nullptr && fire -> state == Fire::Thrown){   // the fireball while it flies, turned the way it moves
+            Gfx::DrawFireball(renderer, fireballTexture, fire -> posX, fire -> posY, std::atan2(fire -> vY, fire -> vX));
+        }
         // The sword points along the aim while it is held, and the way it moves while it flies (the picture points right at angle 0).
         // Screen y points down, so an aim of 30 degrees upward is a rotation of -30.
         float swordAngle = (MainPlayer -> weapon.state == Weapon::Held) ? -angleDegrees * 3.14159265f / 180.0f
@@ -146,6 +176,8 @@ int main(int argc, char* argv[]) {
     SDL_DestroyTexture(linkTexture);     // before the renderer goes away
     SDL_DestroyTexture(swordTexture);
     SDL_DestroyTexture(swordGlow);
+    SDL_DestroyTexture(flameTexture);
+    SDL_DestroyTexture(fireballTexture);
     Gamepad::Quit();
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);

@@ -7,6 +7,7 @@ class Fire : public PhysicsObject{
         float diameter = 15; // 15 px
         Updraft* updraft = nullptr;
         bool isAlive = false;
+        bool isUpDraft = false;
         enum State {
             Start_Throw,
             Thrown,
