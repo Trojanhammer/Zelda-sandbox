@@ -17,29 +17,15 @@ void Updraft::Update(float deltaTime){
             isFinished = true;
             return;
         }
-        //vY -= (netforce * deltaTime) / player -> mass * 100; // 1 meter is 100px.bcs without * 100, it is in m/s not px/s
-        //player -> posY += vY * deltaTime;
-
-        // if (player -> posY >= 406.0f){
-        //     player -> posY = 406.0f;
-        //     vY =0;
-        //     isFinished = true;
-        //     return;
-        // }
         return;
     }
     updraft_force += accumulationRate * deltaTime;
     if(updraft_force >= maxUpdraftForce && max_duration > 0){ // Set limit so player will floating on the air
         updraft_force = maxUpdraftForce;
         vY = 0;
-        // player -> posY += vY * deltaTime;
         return;
     }
     netforce = updraft_force - gravity_force;
-    // if(netforce > 0){ // Only started floating upwards once force is greater than gravity
-    //     //vY -= (netforce * deltaTime) / 70 * 100; // 70 is mass
-    //     //player -> posY += vY * deltaTime;
-    // }
 }
 
 void Updraft::Push(float deltaTime, PhysicsObject& obj){

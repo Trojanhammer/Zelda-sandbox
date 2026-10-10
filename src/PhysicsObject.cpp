@@ -17,9 +17,9 @@ void PhysicsObject::Update(float deltaTime){
             vX =0;
         }
     }
-    if((vX ==0) && (vY ==0)){
-        //state = Idle;
-    }
+    // if((vX ==0) && (vY ==0)){
+    //    state = Idle;
+    // }
 
 }
 

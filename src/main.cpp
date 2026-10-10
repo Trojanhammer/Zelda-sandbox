@@ -27,9 +27,13 @@ int main(int argc, char* argv[]) {
     std::unique_ptr<Fire>fire = nullptr;
     std::unique_ptr<Updraft>updraft = nullptr;
     auto lastTime = std::chrono::high_resolution_clock::now();
+
     while (running) {
+//---------------------------Input Check --------------------------------------------------------------
         float deltaTime = std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - lastTime).count();
         lastTime = std::chrono::high_resolution_clock::now();
+        
+        // "while" here is to capture event that changes.example clicking "square" for one second just register one time ,not 60 times if 60 fps.
         while (SDL_PollEvent(&event)) {
             Gamepad::HandleEvent(event);
             Gamepad::Action action = Gamepad::ActionFromEvent(event);
@@ -46,11 +50,6 @@ int main(int argc, char* argv[]) {
             if (event.type == SDL_QUIT || (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)) {
                 running = false;
             }
-            // check an event if right arrow, go to right so choice is true , vice versa
-            
-            // TODO (you): the other keys (throw, recall) g  o here
-            // make state to recall once a button is clicked either when idle or otw during threw .
-            // make state to start throw when once a button is clicked
         }
         float stickAngle;
         if(Gamepad::AimAngle(stickAngle)) angleDegrees = stickAngle;
@@ -77,8 +76,8 @@ int main(int argc, char* argv[]) {
         }
         if(fire!=nullptr){
             if(fire -> state == Fire::Start_Throw){
-                fire -> posX = MainPlayer -> posX + MainPlayer -> HandX;
-                fire -> posY = MainPlayer -> posY + MainPlayer -> HandY;
+                fire -> posX = MainPlayer -> posX + MainPlayer -> Player::HandX;
+                fire -> posY = MainPlayer -> posY + MainPlayer -> Player::HandY;
                 MainPlayer -> Throw(angleDegrees,*fire);
                 fire -> state = Fire::Thrown; 
             }
@@ -95,6 +94,9 @@ int main(int argc, char* argv[]) {
                 updraft -> Update(deltaTime);
                 if(std::abs(fire -> posX - MainPlayer -> posX) <= 10){
                     updraft -> Push(deltaTime,*MainPlayer);
+                    if(MainPlayer -> weapon.state == Weapon::Held){
+                        MainPlayer -> weapon.posY = MainPlayer -> posY + MainPlayer -> HandY;
+                    }
                 }
                 if(updraft -> isFinished){
                     fire.reset();
