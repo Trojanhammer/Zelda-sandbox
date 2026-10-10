@@ -69,6 +69,7 @@ int main(int argc, char* argv[]) {
         else{
             MainPlayer -> state = Player::Idle;
         }
+        
         // TODO (you): the time and the physics: work out how much time has passed and move your objects.
         if(MainPlayer -> state == Player::Walk){
             MainPlayer -> RightWalk = PathChoice;
@@ -105,6 +106,8 @@ int main(int argc, char* argv[]) {
             }
             }
         }
+        // gravity pull every frame
+        MainPlayer -> OpposeGravity(deltaTime, MainPlayer -> groundY); // 
         
         if(MainPlayer -> weapon.state == Weapon::Start_Throw){
             MainPlayer -> Throw(angleDegrees,MainPlayer -> weapon);

@@ -4,6 +4,7 @@
 Player::Player(Weapon weapon) : weapon(weapon){
     posX = 100;
     posY = 406; // 462 (the ground surface) - 56 (half of Link's 112 px): his feet touch the ground
+    groundY = 406;
 }
 
 void Player::Throw(float angleDegrees,PhysicsObject& obj){
