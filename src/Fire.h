@@ -14,4 +14,8 @@ class Fire : public PhysicsObject{
             Firing
         };
         State state = Start_Throw;
+    public:
+        Fire(){
+            groundY = 450;
+        }
 };

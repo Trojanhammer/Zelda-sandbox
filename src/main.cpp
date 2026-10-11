@@ -107,7 +107,7 @@ int main(int argc, char* argv[]) {
             }
         }
         // gravity pull every frame
-        MainPlayer -> OpposeGravity(deltaTime, MainPlayer -> groundY);  
+        MainPlayer -> OpposeGravity(deltaTime);  
         
         if(MainPlayer -> weapon.state == Weapon::Start_Throw){
             MainPlayer -> Throw(angleDegrees,MainPlayer -> weapon);

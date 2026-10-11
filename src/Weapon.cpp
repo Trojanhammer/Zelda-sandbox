@@ -5,6 +5,8 @@
 Weapon::Weapon() {
     posX = baseposX;
     posY = baseposY;
+    groundY = 450;
+    
 }
 
 void Weapon::Recall(float deltaTime,float PlayerposX){ // TOTK Recall Mechanic 
