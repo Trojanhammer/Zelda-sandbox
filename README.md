@@ -8,7 +8,7 @@ A 2D sandbox for the mechanics of *Tears of the Kingdom* and *Breath of the Wild
 
 *Recall, the first mechanic: the left stick aims, X throws, O recalls (recorded from the game itself, played by a scripted virtual gamepad).*
 
-> **How this was built (AI use):** the mechanics and the physics (`Weapon`, `Player`, the throw, gravity, landing, friction, the recall, walking and picking the sword up) are written by me, by hand: I discuss an idea with Claude, write it myself until I understand it, and ask Claude to review it. The exceptions, written with AI to move faster: the SDL2 window and drawing helpers (`src/graphics/`, including the legs that swing when Link walks; `src/ui/`, which draws text with a built-in pixel font), the gamepad code (`src/input/`), the drawing lines in `main.cpp`, and the build script.
+> **How this was built (AI use):** the mechanics and the physics (`Weapon`, `Player`, `Fire`, `Updraft`, the throw, gravity, landing, friction, the recall, walking and picking the sword up) are written by me, by hand: I discuss an idea with Claude, write it myself until I understand it, and ask Claude to review it. The exceptions, written with AI to move faster: the SDL2 window and drawing helpers (`src/graphics/`, including the legs that swing when Link walks; `src/ui/`, which draws text with a built-in pixel font), the gamepad code (`src/input/`), the drawing lines in `main.cpp`, and the build script.
 
 > **Disclaimer:** This is an unofficial fan project with no affiliation to Nintendo. *The Legend of Zelda* and its characters belong to Nintendo; this is built purely for personal learning and hobby purposes, with no plan to release or distribute it.
 
@@ -17,10 +17,11 @@ A 2D sandbox for the mechanics of *Tears of the Kingdom* and *Breath of the Wild
 | Mechanic | Status |
 |---|---|
 | Recall: throw a sword, then call it back along the way it came | done: aim and throw, rewind along the path it flew (in the air or from the grass), the sword falls if you walked away, and you can pick it up again. With a simple recall effect |
-| Updraft: fire heats the air above it and lifts things up | planned (Link can walk now, which this one needed) |
-| Magnesis: move a metal object with the stick | planned |
+| Updraft: fire heats the air above it and lifts things up | first version done: throw a fire, and Link is lifted while he stands in it (see below) |
+| Magnesis: move a metal object with the stick | next: move a big metal box with the stick, with a simple animation. Two things to test: if I swing it, it carries force when I let go, and if I let go in the air it has to fall |
+| Stasis: lock an object in time | planned, not researched yet: hit the locked object many times, and when time starts again it flies away with all that force, to the end of the world |
 
-These three come first, each in its own sandbox. After that, more mechanics from the two games as time allows.
+These come first, each in its own sandbox. Later I also want a Bokoblin as an enemy to try the mechanics on, and after that more mechanics from the two games as time allows.
 
 ### How the recall works here
 
@@ -32,6 +33,12 @@ These three come first, each in its own sandbox. After that, more mechanics from
 ### Recall effect
 
 *Tears of the Kingdom* shows an effect on a recalled object. This is a simple version: a golden rim on the sword, a see-through copy where it will end up, and a golden line along the path back.
+
+### How the updraft works here
+
+- Square throws a fire. When it lands it burns for about 10 s: its strength grows, stays at the top, then fades.
+- Gravity pulls every object down every frame, and the updraft adds a lift that works against it. Link is lifted once the lift is bigger than gravity (about 2.3 s after the fire lands), is held about 128 px up while the fire is at full strength, and comes down as it fades. He is only lifted while he stands within 10 px of the fire; if he steps out he falls.
+- Only Link is lifted for now, not the sword. Throwing a new fire replaces the old one.
 
 ## Build and run
 
@@ -49,6 +56,7 @@ Needs SDL2 and SDL2_image (`brew install sdl2 sdl2_image`).
 | Left stick | Aim the throw (0 to 180 degrees) |
 | X | Throw the sword (while it is in his hand) |
 | O | Recall the sword (in the air or on the ground) |
+| Square | Throw a fire |
 | Esc | Quit |
 
 ## Files
@@ -57,9 +65,11 @@ Needs SDL2 and SDL2_image (`brew install sdl2 sdl2_image`).
 |---|---|
 | `src/main.cpp` | Window, loop, input |
 | `src/Weapon.h/.cpp` | The sword: position, speed, state (held, thrown, idle, recalling, falling), the recorded path and the recall |
-| `src/Player.h/.cpp` | The player walks, holds the sword, throws it and picks it up again; the physics of the throw |
+| `src/Player.h/.cpp` | The player walks, holds the sword, throws things and picks the sword up again |
+| `src/PhysicsObject.h/.cpp` | What everything that moves shares (position, speed, gravity, lift); `Weapon`, `Player` and `Fire` inherit it |
+| `src/Fire.h`, `src/Updraft.h/.cpp` | The thrown fire, and the updraft it makes when it lands |
 | `src/graphics/` | Drawing only: ground, hand, a sword that turns, a dotted aim line, a marker, loading / drawing / turning sprites, and Link with swinging legs |
 | `docs/` | The GIF and the screenshot shown above |
-| `assets/` | `link.png` (Link without a weapon) and `master-sword.png`, pixel art generated with AI and cleaned up (background removed, shrunk, 24 colors) |
-| `src/input/` | Gamepad: the left stick aims (as a throw angle), X throws, O recalls |
+| `assets/` | `link.png` (Link without a weapon), `master-sword.png`, `flame.png` and `fireball.png`, pixel art generated with AI and cleaned up (background removed, shrunk, 24 colors) |
+| `src/input/` | Gamepad: the left stick aims (as a throw angle), X throws the sword, O recalls it, square throws a fire |
 | `src/ui/` | Text drawn with a small built-in 5x7 pixel font (no SDL_ttf) |
