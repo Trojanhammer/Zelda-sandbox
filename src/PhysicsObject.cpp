@@ -1,7 +1,7 @@
 #include "PhysicsObject.h"
 #include <cmath>
 
-void PhysicsObject::Update(float deltaTime){
+void PhysicsObject::Update(float deltaTime){ // Update position of object when no updraft.Updraft has its own update() which has continous force upwards unlike throwing which is one time force and decrease by gravity.
     float friction = 0.7f;
     posX += vX * deltaTime;
     vY += gravity * deltaTime; // because gravity is acceleratin (it is force that always pull object)
@@ -17,9 +17,6 @@ void PhysicsObject::Update(float deltaTime){
             vX =0;
         }
     }
-    // if((vX ==0) && (vY ==0)){
-    //    state = Idle;
-    // }
 }
 
 void PhysicsObject::OpposeGravity(float deltaTime, float groundY){ // groundY is y axis when on ground depends on each object
@@ -32,7 +29,6 @@ void PhysicsObject::OpposeGravity(float deltaTime, float groundY){ // groundY is
         return;
     }
     lift = 0; // reset again lift
-
 }
 
 
