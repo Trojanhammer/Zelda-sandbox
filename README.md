@@ -18,7 +18,7 @@ A 2D sandbox for the mechanics of *Tears of the Kingdom* and *Breath of the Wild
 |---|---|
 | Recall: throw a sword, then call it back along the way it came | done: aim and throw, rewind along the path it flew (in the air or from the grass), the sword falls if you walked away, and you can pick it up again. With a simple recall effect |
 | Updraft: fire heats the air above it and lifts things up | first version done: throw a fire, and Link is lifted while he stands in it (see below) |
-| Magnesis: move a metal object with the stick | next: move a big metal box with the stick, with a simple animation. Two things to test: if I swing it, it carries force when I let go, and if I let go in the air it has to fall |
+| Magnesis: Link's power to grab a metal object and move it | next: grab a big metal box and move it (steered with the stick in this sandbox), with a simple animation. Two things to test: if I swing it, it carries force when I let go, and if I let go in the air it has to fall |
 | Stasis: lock an object in time | planned, not researched yet: hit the locked object many times, and when time starts again it flies away with all that force, to the end of the world |
 
 These come first, each in its own sandbox. Later I also want a Bokoblin as an enemy to try the mechanics on, and after that more mechanics from the two games as time allows.
