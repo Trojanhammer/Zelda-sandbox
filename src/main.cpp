@@ -178,6 +178,7 @@ int main(int argc, char* argv[]) {
         SDL_RenderClear(renderer);
 
         Gfx::DrawGround(renderer, 462);   // the sword lands with its middle at y = 450 (Weapon.cpp) and is 25 px tall, so the surface is at 462
+        Gfx::DrawBox(renderer, metal_box -> posX, metal_box -> posY, 104, magnesis != nullptr);   // the pointer exists only while magnesis holds it
         if(fire != nullptr && fire -> state == Fire::Firing && updraft != nullptr){   // the fire on the grass and its rising air, behind Link
             // How strong it looks, 0 to 1. While it fades the force starts at his weight (686), so measure it against that and not
             // against the maximum, otherwise the flame would jump from full to two thirds at 10 s.
@@ -206,7 +207,7 @@ int main(int argc, char* argv[]) {
         }
         Gfx::DrawSpriteRotated(renderer, swordTexture, MainPlayer -> weapon.posX, MainPlayer -> weapon.posY, swordAngle);
         UI::DrawText(renderer, Gamepad::Connected() ? "CONTROLLER OK" : "NO CONTROLLER", 20, 20, 2, UI::DARK);
-        UI::DrawTextCentered(renderer, "RECALL", Gfx::WINDOW_W / 2, 10, 2, UI::DARK);
+        UI::DrawTextCentered(renderer, "ZELDA SANDBOX", Gfx::WINDOW_W / 2, 10, 2, UI::DARK);
         UI::DrawText(renderer, "ESC: QUIT", 20, 500, 2, UI::DARK);
 
         SDL_RenderPresent(renderer);

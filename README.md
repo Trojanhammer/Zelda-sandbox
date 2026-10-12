@@ -8,7 +8,7 @@ A 2D sandbox for the mechanics of *Tears of the Kingdom* and *Breath of the Wild
 
 *Recall, the first mechanic: the left stick aims, X throws, O recalls (recorded from the game itself, played by a scripted virtual gamepad).*
 
-> **How this was built (AI use):** the mechanics and the physics (`Weapon`, `Player`, `Fire`, `Updraft`, the throw, gravity, landing, friction, the recall, walking and picking the sword up) are written by me, by hand: I discuss an idea with Claude, write it myself until I understand it, and ask Claude to review it. The exceptions, written with AI to move faster: the SDL2 window and drawing helpers (`src/graphics/`, including the legs that swing when Link walks; `src/ui/`, which draws text with a built-in pixel font), the gamepad code (`src/input/`), the drawing lines in `main.cpp`, and the build script.
+> **How this was built (AI use):** the mechanics and the physics (`Weapon`, `Player`, `Fire`, `Updraft`, `Magnesis`, `Box`, the throw, gravity, landing, friction, the recall, walking and picking the sword up) are written by me, by hand: I discuss an idea with Claude, write it myself until I understand it, and ask Claude to review it. The exceptions, written with AI to move faster: the SDL2 window and drawing helpers (`src/graphics/`, including the legs that swing when Link walks and the metal box; `src/ui/`, which draws text with a built-in pixel font), the gamepad code (`src/input/`), the drawing lines in `main.cpp`, and the build script.
 
 > **Disclaimer:** This is an unofficial fan project with no affiliation to Nintendo. *The Legend of Zelda* and its characters belong to Nintendo; this is built purely for personal learning and hobby purposes, with no plan to release or distribute it.
 
@@ -18,10 +18,10 @@ A 2D sandbox for the mechanics of *Tears of the Kingdom* and *Breath of the Wild
 |---|---|
 | Recall: throw a sword, then call it back along the way it came | done: aim and throw, rewind along the path it flew (in the air or from the grass), the sword falls if you walked away, and you can pick it up again. With a simple recall effect |
 | Updraft: fire heats the air above it and lifts things up | first version done: throw a fire, and Link is lifted while he stands in it (see below) |
-| Magnesis: Link's power to grab a metal object and move it | next: grab a big metal box and move it (steered with the stick in this sandbox), with a simple animation. Two things to test: if I swing it, it carries force when I let go, and if I let go in the air it has to fall |
+| Magnesis: Link's power to grab a metal object and move it | first version done: hold R1 and move a big metal box any way with the right stick, and it glows while it is held (see below). Both tests pass: it carries its speed when I let go, and if I let go in the air it falls |
 | Stasis: lock an object in time | planned, not researched yet: hit the locked object many times, and when time starts again it flies away with all that force, to the end of the world |
 
-These come first, each in its own sandbox. Later I also want a Bokoblin as an enemy to try the mechanics on, and after that more mechanics from the two games as time allows.
+These come first, each in its own sandbox. **Next, before Stasis, I want to clean up the code** and look for a way to avoid so many `if` / `else if` chains in `main.cpp`. Later I also want a Bokoblin as an enemy to try the mechanics on, and after that more mechanics from the two games as time allows.
 
 ### How the recall works here
 
@@ -40,6 +40,16 @@ These come first, each in its own sandbox. Later I also want a Bokoblin as an en
 - Gravity pulls every object down every frame, and the updraft adds a lift that works against it. Link is lifted once the lift is bigger than gravity (about 2.3 s after the fire lands), is held about 128 px up while the fire is at full strength, and comes down as it fades. He is only lifted while he stands within 10 px of the fire; if he steps out he falls.
 - Only Link is lifted for now, not the sword. Throwing a new fire replaces the old one.
 
+### How magnesis works here
+
+![Hold R1 and the right stick moves the box in any direction; let go and it keeps its speed and falls](docs/magnesis.gif)
+
+*Magnesis: the box goes up, sideways and down at 100 px/s while R1 is held, hangs when the stick rests, and keeps its speed when I let go (recorded from the game itself, played by a scripted virtual gamepad).*
+
+- Hold R1 (or `R` on the keyboard) to grab the metal box. While it is held the box moves at a constant 100 px/s towards where the right stick points, in any direction, down too (with the keyboard: the up and down arrows). With the stick at rest it hangs in the air. It glows red with a blue rim while it is held.
+- Holding it only switches gravity off for the box; the movement is the same physics as everything else. Letting go changes nothing except that gravity is back on, so the box keeps the speed it had: let go while it moves sideways and it flies on sideways, let go while it hangs and it falls straight down.
+- The speed is constant, so what it carries when I let go is at most 100 px/s. Only the box can be grabbed for now.
+
 ## Build and run
 
 ```bash
@@ -57,6 +67,8 @@ Needs SDL2 and SDL2_image (`brew install sdl2 sdl2_image`).
 | X | Throw the sword (while it is in his hand) |
 | O | Recall the sword (in the air or on the ground) |
 | Square | Throw a fire |
+| R1 (or R), held | Magnesis: grab the box (let go and it falls) |
+| Right stick (or Up / Down arrow), while R1 is held | Move the box |
 | Esc | Quit |
 
 ## Files
@@ -66,10 +78,11 @@ Needs SDL2 and SDL2_image (`brew install sdl2 sdl2_image`).
 | `src/main.cpp` | Window, loop, input |
 | `src/Weapon.h/.cpp` | The sword: position, speed, state (held, thrown, idle, recalling, falling), the recorded path and the recall |
 | `src/Player.h/.cpp` | The player walks, holds the sword, throws things and picks the sword up again |
-| `src/PhysicsObject.h/.cpp` | What everything that moves shares (position, speed, gravity, lift); `Weapon`, `Player` and `Fire` inherit it |
+| `src/PhysicsObject.h/.cpp` | What everything that moves shares (position, speed, gravity, lift); `Weapon`, `Player`, `Fire` and `Box` inherit it |
 | `src/Fire.h`, `src/Updraft.h/.cpp` | The thrown fire, and the updraft it makes when it lands |
-| `src/graphics/` | Drawing only: ground, hand, a sword that turns, a dotted aim line, a marker, loading / drawing / turning sprites, and Link with swinging legs |
-| `docs/` | The GIF and the screenshot shown above |
+| `src/Box.h`, `src/Magnesis.h/.cpp` | The metal box, and the magnesis that sets its speed while it is held |
+| `src/graphics/` | Drawing only: ground, hand, a sword that turns, a dotted aim line, a marker, loading / drawing / turning sprites, Link with swinging legs, and the metal box |
+| `docs/` | The GIFs shown in this README |
 | `assets/` | `link.png` (Link without a weapon), `master-sword.png`, `flame.png` and `fireball.png`, pixel art generated with AI and cleaned up (background removed, shrunk, 24 colors) |
-| `src/input/` | Gamepad: the left stick aims (as a throw angle), X throws the sword, O recalls it, square throws a fire |
+| `src/input/` | Gamepad: the left stick aims (as a throw angle), X throws the sword, O recalls it, square throws a fire, R1 held and the right stick for magnesis |
 | `src/ui/` | Text drawn with a small built-in 5x7 pixel font (no SDL_ttf) |
