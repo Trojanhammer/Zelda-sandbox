@@ -1,7 +1,8 @@
 #include "PhysicsObject.h"
 #include <cmath>
 
-void PhysicsObject::Update(float deltaTime){ // Update position of object when no updraft.Updraft has its own update() which has continous force upwards unlike throwing which is one time force and decrease by gravity.
+void PhysicsObject::UpdatePosition(float deltaTime){ // UpdatePosition position of object when no updraft.Updraft has its own update() which has continous force upwards unlike throwing which is one time force and decrease by gravity.
+// Every object use this update fx to update their position based on vX,vY and gravity.
     float friction = 0.7f;
     posX += vX * deltaTime;
     OpposeGravity(deltaTime);

@@ -13,7 +13,7 @@ class PhysicsObject {
         static constexpr float gravity = 980.0f; // 98px per second square
 
     public:
-        void Update(float deltaTime);
+        void UpdatePosition(float deltaTime);
         //void Fallen(float deltaTime);
         void OpposeGravity(float deltaTime);
 };

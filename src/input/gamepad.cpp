@@ -61,6 +61,23 @@ bool AimAngle(float& degrees) {
     return true;
 }
 
+bool RightStick(float& x, float& y) {
+    x = 0.0f;
+    y = 0.0f;
+    if (pads.empty()) return false;
+    float rx = SDL_GameControllerGetAxis(pads[0], SDL_CONTROLLER_AXIS_RIGHTX) / 32767.0f;
+    float ry = -SDL_GameControllerGetAxis(pads[0], SDL_CONTROLLER_AXIS_RIGHTY) / 32767.0f;   // flipped, so up is positive
+    if (std::hypot(rx, ry) < DEAD_ZONE) return false;     // a resting stick that drifts a little counts as not pushed
+    x = std::max(-1.0f, std::min(1.0f, rx));              // SDL's lowest value, -32768, would give -1.00003
+    y = std::max(-1.0f, std::min(1.0f, ry));
+    return true;
+}
+
+bool MagnesisHeld() {
+    if (pads.empty()) return false;
+    return SDL_GameControllerGetButton(pads[0], SDL_CONTROLLER_BUTTON_RIGHTSHOULDER) != 0;
+}
+
 Action ActionFromEvent(const SDL_Event& event) {
     if (event.type != SDL_CONTROLLERBUTTONDOWN) return NoAction;
     if (event.cbutton.button == SDL_CONTROLLER_BUTTON_A) return ThrowAction;    // X (cross)

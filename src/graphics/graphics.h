@@ -64,6 +64,11 @@ namespace Gfx {
     // sword: angle = atan2(speedY, speedX)), or nullptr to draw a ball of fire with a tail.
     void DrawFireball(SDL_Renderer* renderer, SDL_Texture* fireball, float x, float y, float angle);
 
+    // The big metal box for magnesis, a square of `size` px with its MIDDLE at (x, y) (use the box's posX, posY; size 104 puts its
+    // bottom on the ground when groundY is 410). Drawn from rectangles: steel with a lit top-left edge, a crossed panel and four rivets.
+    // held = true while magnesis has it: a red glow that pulses around it, with a thin blue rim (the two ends of a magnet).
+    void DrawBox(SDL_Renderer* renderer, float x, float y, float size, bool held);
+
     // A small cross with its middle at (x, y). Handy to look at the recorded dots of a path.
     void DrawMarker(SDL_Renderer* renderer, float x, float y, SDL_Color color);
 }

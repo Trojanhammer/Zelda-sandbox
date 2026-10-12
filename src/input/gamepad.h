@@ -1,7 +1,8 @@
 #pragma once
 #include <SDL.h>
 
-// DualSense (or any gamepad) for the sandbox: the left stick aims, X throws the sword, O recalls it, square throws a fire.
+// DualSense (or any gamepad) for the sandbox: the left stick aims, X throws the sword, O recalls it, square throws a fire,
+// R1 held + the right stick = magnesis.
 // SDL calls the cross button "A", the circle button "B" and the square button "X" (it names buttons by their place on an Xbox pad).
 namespace Gamepad {
     // Call once after SDL_Init(... | SDL_INIT_GAMECONTROLLER): opens the pads that are already plugged in.
@@ -20,6 +21,15 @@ namespace Gamepad {
     // otherwise returns false and leaves `degrees` alone, so you can keep the last angle:
     //     float a; if (Gamepad::AimAngle(a)) angleDegrees = a;
     bool AimAngle(float& degrees);
+
+    // The right stick, for moving a magnesis object: x and y go from -1 to 1, x = 1 is right and y = 1 is UP (the same way as
+    // AimAngle). A stick that rests in the middle (inside the dead zone) gives 0 and 0. Returns true while it is pushed,
+    // false when it rests or no pad is plugged in (x and y are 0 then).
+    bool RightStick(float& x, float& y);
+
+    // Is R1 held down right now? Ask every frame: true while it is held, false the moment it is let go.
+    // (For magnesis: held = the object is held up, let go = it falls.)
+    bool MagnesisHeld();
 
     enum Action { NoAction, ThrowAction, RecallAction, FireAction };
     // What a button press asks for: X (cross) = ThrowAction, O (circle) = RecallAction, square = FireAction,

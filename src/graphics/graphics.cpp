@@ -316,6 +316,64 @@ void DrawFireball(SDL_Renderer* renderer, SDL_Texture* fireball, float x, float 
     FillEllipse(renderer, x + c * 1.5f, y + s * 1.5f, 5.5f, 5.5f, SDL_Color{255, 235, 120, 255});   // its hot core
 }
 
+void DrawBox(SDL_Renderer* renderer, float x, float y, float size, bool held) {
+    float t = SDL_GetTicks() / 1000.0f;                       // only used to make the glow pulse
+    float pulse = 0.5f + 0.5f * std::sin(t * 6.0f);           // goes between 0 and 1, about once a second
+    int s = (int)size;
+    int left = (int)x - s / 2, top = (int)y - s / 2;
+    auto fillRect = [&](int rx, int ry, int rw, int rh, SDL_Color c) {
+        SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, c.a);
+        SDL_Rect r = {rx, ry, rw, rh};
+        SDL_RenderFillRect(renderer, &r);
+    };
+
+    // 1. the glow behind the box: three red rings that grow and fade outwards, and a thin blue rim close to the box
+    if (held) {
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+        for (int ring = 3; ring >= 1; ring--) {
+            int grow = ring * 4 + (int)(pulse * 4);
+            fillRect(left - grow, top - grow, s + 2 * grow, s + 2 * grow, SDL_Color{255, 70, 60, (Uint8)((90 - ring * 22) * (0.6f + 0.4f * pulse))});
+        }
+        SDL_SetRenderDrawColor(renderer, 80, 140, 255, (Uint8)(120 + 100 * pulse));
+        SDL_Rect rim = {left - 2, top - 2, s + 4, s + 4};
+        SDL_RenderDrawRect(renderer, &rim);
+    }
+
+    // 2. the body: a dark outline, the steel, a lit edge on the top and left and a shaded one on the bottom and right
+    const SDL_Color steel = {120, 134, 150, 255}, lit = {178, 192, 208, 255}, shade = {72, 84, 98, 255}, dark = {32, 38, 48, 255};
+    fillRect(left, top, s, s, dark);
+    fillRect(left + 3, top + 3, s - 6, s - 6, steel);
+    fillRect(left + 3, top + 3, s - 6, 4, lit);
+    fillRect(left + 3, top + 3, 4, s - 6, lit);
+    fillRect(left + 3, top + s - 7, s - 6, 4, shade);
+    fillRect(left + s - 7, top + 3, 4, s - 6, shade);
+
+    // 3. the panel in the middle with two braces across it (the braces stick out a little, so the panel's edge is drawn over them)
+    int pad = 14, panel = s - 2 * pad;
+    fillRect(left + pad, top + pad, panel, panel, SDL_Color{100, 113, 128, 255});
+    float middleX = left + s / 2.0f, middleY = top + s / 2.0f, brace = (panel - 4) * 1.4142f;
+    FillTurnedRect(renderer, middleX, middleY, brace, 5, 0.7854f, shade);      // 0.7854 radians = 45 degrees
+    FillTurnedRect(renderer, middleX, middleY, brace, 5, -0.7854f, shade);
+    fillRect(left + pad, top + pad, panel, 2, shade);                          // the panel's four edges, on top of the braces
+    fillRect(left + pad, top + pad + panel - 2, panel, 2, shade);
+    fillRect(left + pad, top + pad, 2, panel, shade);
+    fillRect(left + pad + panel - 2, top + pad, 2, panel, shade);
+
+    // 4. a rivet in each corner: a small shadow, then the bright head
+    const int rivetAt[2] = {7, s - 14};
+    for (int cx = 0; cx < 2; cx++) {
+        for (int cy = 0; cy < 2; cy++) {
+            fillRect(left + rivetAt[cx] + 1, top + rivetAt[cy] + 1, 6, 6, dark);
+            fillRect(left + rivetAt[cx], top + rivetAt[cy], 5, 5, SDL_Color{205, 216, 228, 255});
+        }
+    }
+
+    // 5. while it is held the whole box gets a very faint red tint that pulses with the glow (more would hide the steel)
+    if (held) {
+        fillRect(left, top, s, s, SDL_Color{255, 70, 60, (Uint8)(10 + 22 * pulse)});
+    }
+}
+
 void DrawMarker(SDL_Renderer* renderer, float x, float y, SDL_Color color) {
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
     SDL_RenderDrawLine(renderer, (int)x - 3, (int)y, (int)x + 3, (int)y);

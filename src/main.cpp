@@ -3,6 +3,7 @@
 #include "ui/ui.h"
 #include "input/gamepad.h"
 #include "Fire.h"
+#include "Magnesis.h"
 
 #include <SDL.h>
 #include <memory>
@@ -24,8 +25,12 @@ int main(int argc, char* argv[]) {
     SDL_Event event;
     float angleDegrees=0.0f;
     bool PathChoice = true; // true to the right and vice versa
+
     std::unique_ptr<Fire>fire = nullptr;
     std::unique_ptr<Updraft>updraft = nullptr;
+    std::unique_ptr<Magnesis>magnesis = nullptr;
+
+    auto metal_box = std::make_unique<Box>();
     auto lastTime = std::chrono::high_resolution_clock::now();
 
     while (running) {
@@ -46,15 +51,39 @@ int main(int argc, char* argv[]) {
             else if(action == Gamepad::FireAction){
                 fire = std::make_unique<Fire>();
             }
-            // set fire(initialize the obj)
             if (event.type == SDL_QUIT || (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)) {
                 running = false;
             }
         }
-        float stickAngle;
-        if(Gamepad::AimAngle(stickAngle)) angleDegrees = stickAngle;
-        
+
         const Uint8* keys = SDL_GetKeyboardState(nullptr); // read which key are hold down right now, read every frame
+        bool magnesisHeld = Gamepad::MagnesisHeld() || keys[SDL_SCANCODE_R];
+        float sx =0, sy=0; // speed x & y of analog
+        Gamepad::RightStick(sx,sy);
+        sy = -sy; // right stick will give x and y value based on normal ones(atas (+))
+        if(keys[SDL_SCANCODE_UP]) sy = -1;
+        if(keys[SDL_SCANCODE_DOWN]) sy = 1;
+        if(magnesisHeld){
+            if(magnesis == nullptr){ // initialized once
+                magnesis = std::make_unique<Magnesis>();
+            }
+            if(sx !=0 || sy !=0){
+                float magnesisAngle = std::atan2(sy,sx) * 180.0f / 3.14159265f; // calculate angle of target pos and before.
+                magnesis -> Update(*metal_box, deltaTime, magnesisAngle); // determine vX & vY
+            }
+            else{
+                metal_box -> vX = 0;
+                metal_box -> vY = 0;
+                metal_box -> lift = PhysicsObject::gravity;
+            }
+        }
+        else{
+            magnesis.reset(); // delete ptr and freed the object
+        }
+
+        float throwAngle;
+        if(Gamepad::AimAngle(throwAngle)) angleDegrees = throwAngle;
+        
         bool leftHeld = keys[SDL_SCANCODE_LEFT];
         bool rightHeld = keys[SDL_SCANCODE_RIGHT];
 
@@ -70,7 +99,7 @@ int main(int argc, char* argv[]) {
             MainPlayer -> state = Player::Idle;
         }
         
-        // TODO (you): the time and the physics: work out how much time has passed and move your objects.
+// ------------ PHYSICS -----------------------------------------------------------
         if(MainPlayer -> state == Player::Walk){
             MainPlayer -> RightWalk = PathChoice;
             MainPlayer -> Walking(deltaTime);
@@ -83,7 +112,7 @@ int main(int argc, char* argv[]) {
                 fire -> state = Fire::Thrown; 
             }
             else if(fire -> state == Fire::Thrown){
-                fire -> Update(deltaTime);
+                fire -> UpdatePosition(deltaTime);
                 if(fire -> vX ==0 && fire -> vY ==0){
                     fire -> state = Fire::Firing;
                 if(!fire -> isUpDraft){
@@ -106,8 +135,11 @@ int main(int argc, char* argv[]) {
             }
             }
         }
-        // gravity pull every frame
-        MainPlayer -> OpposeGravity(deltaTime);  
+        // gravity pull every frame on player
+        MainPlayer -> OpposeGravity(deltaTime);
+
+        // update position of metal_box in every frame
+        metal_box -> UpdatePosition(deltaTime);
         
         if(MainPlayer -> weapon.state == Weapon::Start_Throw){
             MainPlayer -> Throw(angleDegrees,MainPlayer -> weapon);
@@ -115,7 +147,7 @@ int main(int argc, char* argv[]) {
         }
         else if(MainPlayer -> weapon.state == Weapon::Thrown){
             MainPlayer -> weapon.RecallCoord.push_back({MainPlayer -> weapon.posX,MainPlayer -> weapon.posY, MainPlayer -> weapon.RecallClock});
-            MainPlayer -> weapon.Update(deltaTime);
+            MainPlayer -> weapon.UpdatePosition(deltaTime);
             if((MainPlayer -> weapon.vX ==0) && (MainPlayer -> weapon.vY ==0)){
                 MainPlayer -> weapon.state = Weapon::Idle;
             }
@@ -141,6 +173,7 @@ int main(int argc, char* argv[]) {
             }
         }
 
+//---------------- RENDER -------------------------------------------------------------------------------
         SDL_SetRenderDrawColor(renderer, 245, 245, 240, 255);
         SDL_RenderClear(renderer);
 
