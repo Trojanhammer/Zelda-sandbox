@@ -41,7 +41,7 @@ These come first, each in its own sandbox. **Next, before Stasis, I want to clea
 *Updraft: the fire lands, grows and lifts Link, holds him at the top and lets him down as it fades (the long hold at the top is cut out; recorded from the game itself, played by a scripted virtual gamepad and arrow keys).*
 
 - Square throws a fire. When it lands it burns for about 10 s: its strength grows, stays at the top, then fades.
-- Gravity pulls every object down every frame, and the updraft adds a lift that works against it. Link is lifted once the lift is bigger than gravity (about 2.3 s after the fire lands), is held about 128 px up while the fire is at full strength, and comes down as it fades. He is only lifted while he stands within 10 px of the fire; if he steps out he falls.
+- Gravity pulls every object down every frame, and the updraft adds a lift that works against it. Link is lifted once the lift is bigger than gravity (about 2.3 s after the fire lands), is held about 319 px up while the fire is at full strength, and comes down as it fades. He is only lifted while he stands within 10 px of the fire; if he steps out he falls.
 - Only Link is lifted for now, not the sword. Throwing a new fire replaces the old one.
 
 ### How magnesis works here

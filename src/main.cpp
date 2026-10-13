@@ -153,7 +153,7 @@ int main(int argc, char* argv[]) {
             // against the maximum, otherwise the flame would jump from full to two thirds at 10 s.
             float intensity = updraft -> decayStarted ? updraft -> updraft_force / Updraft::gravity_force
                                                       : updraft -> updraft_force / Updraft::maxUpdraftForce;
-            Gfx::DrawUpdraftColumn(renderer, fire -> posX, 462, 50, 250, intensity);
+            Gfx::DrawUpdraftColumn(renderer, fire -> posX, 462, 50, 340, intensity);   // 340 px tall: he is held about 319 px up, so his feet (at 462 - 319 = 143) stay inside
             Gfx::DrawFire(renderer, flameTexture, fire -> posX, 462, 50, intensity);
         }
         Gfx::DrawWalker(renderer, linkTexture, MainPlayer -> posX, MainPlayer -> posY, MainPlayer -> state == Player::Walk);   // legs swing while he walks
