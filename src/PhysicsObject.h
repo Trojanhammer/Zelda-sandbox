@@ -14,6 +14,5 @@ class PhysicsObject {
 
     public:
         void UpdatePosition(float deltaTime);
-        //void Fallen(float deltaTime);
         void OpposeGravity(float deltaTime);
 };

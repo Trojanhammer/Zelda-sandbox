@@ -23,4 +23,5 @@ class Player : public PhysicsObject {
         void Throw(float angleDegrees, PhysicsObject& obj);
         void Walking(float deltaTime);
         void Pickup(float handX, float handY);
+        void UpdateWeapon(float deltaTime, float throwAngle);
 };

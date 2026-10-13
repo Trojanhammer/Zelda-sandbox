@@ -31,6 +31,4 @@ class Weapon : public PhysicsObject{
     public:
         Weapon();
         void Recall(float deltaTime,float PlayerposX);
-        void Fallen(float deltaTime);
-        
 };

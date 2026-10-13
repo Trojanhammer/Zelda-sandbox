@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
     SDL_Texture* fireballTexture = Gfx::LoadTexture(renderer, "assets/fireball.png");   // what is thrown
     bool running = true;
     SDL_Event event;
-    float angleDegrees=0.0f;
+    float throwAngle=0.0f;
     bool PathChoice = true; // true to the right and vice versa
 
     std::unique_ptr<Fire>fire = nullptr;
@@ -81,8 +81,8 @@ int main(int argc, char* argv[]) {
             magnesis.reset(); // delete ptr and freed the object
         }
 
-        float throwAngle;
-        if(Gamepad::AimAngle(throwAngle)) angleDegrees = throwAngle;
+        float stickAngle;
+        if(Gamepad::AimAngle(stickAngle)) throwAngle = stickAngle;
         
         bool leftHeld = keys[SDL_SCANCODE_LEFT];
         bool rightHeld = keys[SDL_SCANCODE_RIGHT];
@@ -108,7 +108,7 @@ int main(int argc, char* argv[]) {
             if(fire -> state == Fire::Start_Throw){
                 fire -> posX = MainPlayer -> posX + MainPlayer -> Player::HandX;
                 fire -> posY = MainPlayer -> posY + MainPlayer -> Player::HandY;
-                MainPlayer -> Throw(angleDegrees,*fire);
+                MainPlayer -> Throw(throwAngle,*fire);
                 fire -> state = Fire::Thrown; 
             }
             else if(fire -> state == Fire::Thrown){
@@ -124,9 +124,6 @@ int main(int argc, char* argv[]) {
                 updraft -> Update(deltaTime);
                 if(std::abs(fire -> posX - MainPlayer -> posX) <= 10){
                     updraft -> Push(deltaTime,*MainPlayer);
-                    if(MainPlayer -> weapon.state == Weapon::Held){
-                        MainPlayer -> weapon.posY = MainPlayer -> posY + MainPlayer -> HandY;
-                    }
                 }
                 if(updraft -> isFinished){
                     fire.reset();
@@ -135,43 +132,15 @@ int main(int argc, char* argv[]) {
             }
             }
         }
-        // gravity pull every frame on player
-        MainPlayer -> OpposeGravity(deltaTime);
 
-        // update position of metal_box in every frame
+        MainPlayer -> UpdatePosition(deltaTime);
+
+
+        // update position of metal_box in every frame 
         metal_box -> UpdatePosition(deltaTime);
         
-        if(MainPlayer -> weapon.state == Weapon::Start_Throw){
-            MainPlayer -> Throw(angleDegrees,MainPlayer -> weapon);
-            MainPlayer -> weapon.state = Weapon::Thrown;
-        }
-        else if(MainPlayer -> weapon.state == Weapon::Thrown){
-            MainPlayer -> weapon.RecallCoord.push_back({MainPlayer -> weapon.posX,MainPlayer -> weapon.posY, MainPlayer -> weapon.RecallClock});
-            MainPlayer -> weapon.UpdatePosition(deltaTime);
-            if((MainPlayer -> weapon.vX ==0) && (MainPlayer -> weapon.vY ==0)){
-                MainPlayer -> weapon.state = Weapon::Idle;
-            }
-            MainPlayer -> weapon.RecallClock +=deltaTime;
-        }
-        else if(MainPlayer -> weapon.state == Weapon::Recalling){
-            MainPlayer -> weapon.Recall(deltaTime,MainPlayer -> posX);
-        }
-        else if(MainPlayer -> weapon.state == Weapon::Fall){
-                MainPlayer -> weapon.Fallen(deltaTime);
-        }
-        else if(MainPlayer -> weapon.state == Weapon::Held){
-            // do nothing
-        }
-        else if (MainPlayer -> weapon.state == Weapon::Idle){
-            if((MainPlayer -> weapon.RecallClock < MainPlayer -> weapon.RecallLimit) &&  MainPlayer -> weapon.RecallClock > 0.0f){
-                MainPlayer -> weapon.RecallClock += deltaTime;
-                MainPlayer -> weapon.RecallCoord.push_back({MainPlayer -> weapon.posX,MainPlayer -> weapon.posY,MainPlayer -> weapon.RecallClock});
-            }
-            else if(MainPlayer -> weapon.RecallClock >= MainPlayer -> weapon.RecallLimit){
-                MainPlayer -> weapon.RecallCoord.clear();
-                MainPlayer -> weapon.RecallClock = 0.0f;
-            }
-        }
+        MainPlayer -> UpdateWeapon(deltaTime,throwAngle);
+
 
 //---------------- RENDER -------------------------------------------------------------------------------
         SDL_SetRenderDrawColor(renderer, 245, 245, 240, 255);
@@ -193,10 +162,10 @@ int main(int argc, char* argv[]) {
         }
         // The sword points along the aim while it is held, and the way it moves while it flies (the picture points right at angle 0).
         // Screen y points down, so an aim of 30 degrees upward is a rotation of -30.
-        float swordAngle = (MainPlayer -> weapon.state == Weapon::Held) ? -angleDegrees * 3.14159265f / 180.0f
+        float swordAngle = (MainPlayer -> weapon.state == Weapon::Held) ? -throwAngle * 3.14159265f / 180.0f
                                                                         : std::atan2(MainPlayer -> weapon.vY, MainPlayer -> weapon.vX);
         if(MainPlayer -> weapon.state == Weapon::Held){
-            Gfx::DrawAimLine(renderer, MainPlayer -> weapon.posX, MainPlayer -> weapon.posY, angleDegrees);
+            Gfx::DrawAimLine(renderer, MainPlayer -> weapon.posX, MainPlayer -> weapon.posY, throwAngle);
         }
         if(MainPlayer -> weapon.state == Weapon::Recalling){   // glow + the path back, behind the sword
             std::vector<SDL_FPoint> pathBack;                  // the recorded dots from the start of the throw up to where the sword is now

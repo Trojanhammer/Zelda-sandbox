@@ -36,7 +36,7 @@ void Weapon::Recall(float deltaTime,float PlayerposX){ // TOTK Recall Mechanic
             }
 
         }
-        if(RecallClock <= RecallCoord[0].time){
+        if(RecallClock <= RecallCoord[0].time){ 
             RecallClock=0.0f;
             posX = RecallCoord[0].posX;
             posY  = RecallCoord[0].posY;
@@ -54,19 +54,6 @@ void Weapon::Recall(float deltaTime,float PlayerposX){ // TOTK Recall Mechanic
         
     }
 
-void Weapon::Fallen(float deltaTime){
-    RecallCoord.push_back({posX,posY,RecallClock});
-    vY += gravity * deltaTime;
-    posY += vY * deltaTime;
-    if (posY >= 450.0f){ // middle of swords stop here indicating it reaches the grass
-        posY = 450.0f;
-        vY =0.0f;
-    }
-    if((vX ==0) && (vY ==0)){
-        state = Weapon::Idle;
-    }
-    RecallClock +=deltaTime;
-}
 
 
 
