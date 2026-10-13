@@ -28,8 +28,8 @@ void Player::Pickup(float handX, float handY){ // Pickup will reset for recall
     weapon.posX = posX + handX;
     weapon.posY = posY + handY;
     weapon.state = Weapon::Held;
-    weapon.RecallCoord.clear();
-    weapon.RecallClock = 0.0f;
+    weapon.recall.RecallCoord.clear();
+    weapon.recall.RecallClock = 0.0f;
 }
 
 void Player::UpdateWeapon(float deltaTime, float throwAngle){
@@ -40,25 +40,27 @@ void Player::UpdateWeapon(float deltaTime, float throwAngle){
             break;
         
         case Weapon::Thrown :
-            weapon.RecallCoord.push_back({weapon.posX,weapon.posY,weapon.RecallClock});
+            weapon.recall.Record(weapon.posX , weapon.posY);
             weapon.UpdatePosition(deltaTime);
             if((weapon.vX ==0) && (weapon.vY ==0)){
                 weapon.state = Weapon::Idle;
             }
-            weapon.RecallClock +=deltaTime;
+            weapon.recall.RecallClock +=deltaTime;
             break;
         
         case Weapon::Recalling :
-            weapon.Recall(deltaTime,posX);
+            if(weapon.recall.Rewind(deltaTime, weapon)){
+                weapon.state = (weapon.posX != posX + HandX) ? Weapon::Fall : Weapon::Held;
+            }
             break;
-        
+            
         case Weapon::Fall :
-            weapon.RecallCoord.push_back({weapon.posX,weapon.posY,weapon.RecallClock});
+            weapon.recall.Record(weapon.posX , weapon.posY);
             weapon.UpdatePosition(deltaTime);
             if((weapon.vX ==0) && (weapon.vY ==0)){
                 weapon.state = Weapon::Idle;
             }
-            weapon.RecallClock +=deltaTime;
+            weapon.recall.RecallClock +=deltaTime;
             break;
         case Weapon::Held :
             weapon.posX = HandX + posX;
@@ -66,13 +68,13 @@ void Player::UpdateWeapon(float deltaTime, float throwAngle){
             break;
 
         case Weapon::Idle :
-            if((weapon.RecallClock < weapon.RecallLimit) &&  weapon.RecallClock > 0.0f){
-                weapon.RecallClock += deltaTime;
-                weapon.RecallCoord.push_back({weapon.posX,weapon.posY,weapon.RecallClock});
+            if((weapon.recall.RecallClock < weapon.recall.RecallLimit) &&  weapon.recall.RecallClock > 0.0f){
+                weapon.recall.RecallClock += deltaTime;
+                weapon.recall.RecallCoord.push_back({weapon.posX,weapon.posY,weapon.recall.RecallClock});
             }
-            else if(weapon.RecallClock >= weapon.RecallLimit){
-                weapon.RecallCoord.clear();
-                weapon.RecallClock = 0.0f;
+            else if(weapon.recall.RecallClock >= weapon.recall.RecallLimit){
+                weapon.recall.RecallCoord.clear();
+                weapon.recall.RecallClock = 0.0f;
             }
             break;
         }

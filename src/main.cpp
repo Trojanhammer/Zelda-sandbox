@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
             if(action == Gamepad::ThrowAction && MainPlayer -> weapon.state == Weapon::Held){
                 MainPlayer -> weapon.state = Weapon::Start_Throw;
             }
-            else if(action == Gamepad::RecallAction && (MainPlayer -> weapon.state == Weapon::Thrown || MainPlayer -> weapon.state == Weapon::Idle) && (!MainPlayer -> weapon.RecallCoord.empty())){
+            else if(action == Gamepad::RecallAction && (MainPlayer -> weapon.state == Weapon::Thrown || MainPlayer -> weapon.state == Weapon::Idle) && (!MainPlayer -> weapon.recall.RecallCoord.empty())){
                 MainPlayer -> weapon.state = Weapon::Recalling;
             }
             else if(action == Gamepad::FireAction){
@@ -169,8 +169,8 @@ int main(int argc, char* argv[]) {
         }
         if(MainPlayer -> weapon.state == Weapon::Recalling){   // glow + the path back, behind the sword
             std::vector<SDL_FPoint> pathBack;                  // the recorded dots from the start of the throw up to where the sword is now
-            for(const auto& dot : MainPlayer -> weapon.RecallCoord){
-                if(dot.time <= MainPlayer -> weapon.RecallClock) pathBack.push_back({dot.posX, dot.posY});
+            for(const auto& dot : MainPlayer -> weapon.recall.RecallCoord){
+                if(dot.time <= MainPlayer -> weapon.recall.RecallClock) pathBack.push_back({dot.posX, dot.posY});
             }
             Gfx::DrawRecallEffect(renderer, swordGlow, MainPlayer -> weapon.posX, MainPlayer -> weapon.posY, swordAngle, pathBack);
         }
