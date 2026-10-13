@@ -4,9 +4,9 @@ A 2D sandbox for the mechanics of *Tears of the Kingdom* and *Breath of the Wild
 
 **How it is organised:** every mechanic is built first in its own small sandbox, on its own, so I can understand it, test it and get it right before anything else gets in the way. Once each one works well, I will consider merging them into one world.
 
-![The left stick aims, X throws the sword, O recalls it along the path it flew](docs/throw-and-recall.gif)
+![The left stick aims, X throws the sword, O recalls it along the path it flew, with a golden line and rim](docs/throw-and-recall.gif)
 
-*Recall, the first mechanic: the left stick aims, X throws, O recalls (recorded from the game itself, played by a scripted virtual gamepad).*
+*Recall, the first mechanic: the left stick aims, X throws, O recalls it along the path it flew (the golden line and rim). The second recall happens after he walked away, so the sword falls and he walks back to pick it up. Recorded from the game itself, played by a scripted virtual gamepad and arrow keys.*
 
 > **How this was built (AI use):** the mechanics and the physics (`Weapon`, `Player`, `Fire`, `Updraft`, `Magnesis`, `Box`, the throw, gravity, landing, friction, the recall, walking and picking the sword up) are written by me, by hand: I discuss an idea with Claude, write it myself until I understand it, and ask Claude to review it. The exceptions, written with AI to move faster: the SDL2 window and drawing helpers (`src/graphics/`, including the legs that swing when Link walks and the metal box; `src/ui/`, which draws text with a built-in pixel font), the gamepad code (`src/input/`), the drawing lines in `main.cpp`, and the build script.
 
@@ -35,6 +35,10 @@ These come first, each in its own sandbox. **Next, before Stasis, I want to clea
 *Tears of the Kingdom* shows an effect on a recalled object. This is a simple version: a golden rim on the sword, a see-through copy where it will end up, and a golden line along the path back.
 
 ### How the updraft works here
+
+![Square throws a fire; Link stands in it and is lifted while it burns, then comes down as it fades](docs/updraft.gif)
+
+*Updraft: the fire lands, grows and lifts Link, holds him at the top and lets him down as it fades (the long hold at the top is cut out; recorded from the game itself, played by a scripted virtual gamepad and arrow keys).*
 
 - Square throws a fire. When it lands it burns for about 10 s: its strength grows, stays at the top, then fades.
 - Gravity pulls every object down every frame, and the updraft adds a lift that works against it. Link is lifted once the lift is bigger than gravity (about 2.3 s after the fire lands), is held about 128 px up while the fire is at full strength, and comes down as it fades. He is only lifted while he stands within 10 px of the fire; if he steps out he falls.
