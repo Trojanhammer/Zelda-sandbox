@@ -239,6 +239,53 @@ void DrawRecallEffect(SDL_Renderer* renderer, SDL_Texture* silhouette, float swo
     SDL_SetTextureAlphaMod(silhouette, 255);
 }
 
+void DrawBoxRecallEffect(SDL_Renderer* renderer, float x, float y, float size, const std::vector<SDL_FPoint>& path) {
+    float t = SDL_GetTicks() / 1000.0f;   // only used to make the glow flicker
+    int s = (int)size;
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
+    // 1. the path it goes back along: a bright thin line, with a soft wider one behind it (the same as the sword's)
+    std::vector<SDL_FPoint> line = path;
+    line.push_back({x, y});
+    for (size_t i = 0; i + 1 < line.size(); i++) {
+        SDL_SetRenderDrawColor(renderer, 255, 200, 40, 70);
+        for (int dy = -1; dy <= 1; dy++) {
+            for (int dx = -1; dx <= 1; dx++) {
+                if (dx != 0 || dy != 0) SDL_RenderDrawLineF(renderer, line[i].x + dx, line[i].y + dy, line[i + 1].x + dx, line[i + 1].y + dy);
+            }
+        }
+        SDL_SetRenderDrawColor(renderer, 255, 190, 20, 235);
+        SDL_RenderDrawLineF(renderer, line[i].x, line[i].y, line[i + 1].x, line[i + 1].y);
+    }
+
+    // 2. the see-through copy where it will end up (the first dot of the path): a faint golden fill and a brighter edge, both pulsing
+    if (!path.empty()) {
+        float pulse = 0.5f + 0.5f * std::sin(t * 6.0f);
+        SDL_Rect ghost = {(int)path[0].x - s / 2, (int)path[0].y - s / 2, s, s};
+        SDL_SetRenderDrawColor(renderer, 255, 205, 40, (Uint8)(35 + 30 * pulse));
+        SDL_RenderFillRect(renderer, &ghost);
+        SDL_SetRenderDrawColor(renderer, 255, 205, 40, (Uint8)(140 + 80 * pulse));
+        SDL_RenderDrawRect(renderer, &ghost);
+    }
+
+    // 3. the frame around the box: a sharp golden one and a soft one outside it. Each flickers by itself, so it crackles a little
+    //    like the sword's rim. A frame is four thin rectangles, `gap` px outside the box and `thick` px thick.
+    int cx = (int)x - s / 2, cy = (int)y - s / 2;
+    for (int ring = 0; ring < 2; ring++) {
+        int gap = (int)((ring == 0 ? 1.0f : 4.0f) + std::sin(t * 40.0f + ring * 1.7f));
+        int thick = (ring == 0) ? 2 : 3;
+        SDL_SetRenderDrawColor(renderer, 255, 205, 40, (ring == 0) ? 255 : 90);
+        SDL_Rect top    = {cx - gap - thick, cy - gap - thick, s + 2 * (gap + thick), thick};
+        SDL_Rect bottom = {cx - gap - thick, cy + s + gap,     s + 2 * (gap + thick), thick};
+        SDL_Rect left   = {cx - gap - thick, cy - gap,         thick, s + 2 * gap};
+        SDL_Rect right  = {cx + s + gap,     cy - gap,         thick, s + 2 * gap};
+        SDL_RenderFillRect(renderer, &top);
+        SDL_RenderFillRect(renderer, &bottom);
+        SDL_RenderFillRect(renderer, &left);
+        SDL_RenderFillRect(renderer, &right);
+    }
+}
+
 void DrawFire(SDL_Renderer* renderer, SDL_Texture* flame, float x, float groundY, float radius, float intensity) {
     intensity = std::clamp(intensity, 0.0f, 1.0f);
     float t = SDL_GetTicks() / 1000.0f;                 // only used to make the flame flicker

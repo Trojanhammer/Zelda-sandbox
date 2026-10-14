@@ -83,6 +83,7 @@ Action ActionFromEvent(const SDL_Event& event) {
     if (event.cbutton.button == SDL_CONTROLLER_BUTTON_A) return ThrowAction;    // X (cross)
     if (event.cbutton.button == SDL_CONTROLLER_BUTTON_B) return RecallAction;   // O (circle)
     if (event.cbutton.button == SDL_CONTROLLER_BUTTON_X) return FireAction;     // square
+    if (event.cbutton.button == SDL_CONTROLLER_BUTTON_Y) return BoxRecallAction;   // triangle
     return NoAction;
 }
 

@@ -50,6 +50,12 @@ namespace Gfx {
     // the sword itself, so the rim sits behind it. Does nothing if silhouette is nullptr.
     void DrawRecallEffect(SDL_Renderer* renderer, SDL_Texture* silhouette, float swordX, float swordY, float swordAngle, const std::vector<SDL_FPoint>& path);
 
+    // The same look of a recall for the metal box (it has no picture to turn into a silhouette, so it is drawn from rectangles): a
+    // flickering golden frame around the box, a see-through golden box where it will end up (the first dot of the path), and the
+    // golden line of the path it goes back along. `path` = the recorded dots from where it was let go up to where it is now, in that
+    // order, `size` is the box's size in px (the same as DrawBox). Call it BEFORE DrawBox, so the frame sits behind the box.
+    void DrawBoxRecallEffect(SDL_Renderer* renderer, float x, float y, float size, const std::vector<SDL_FPoint>& path);
+
     // The fire on the ground for the updraft. Its base sits at (x, groundY); `radius` is half of its width on the grass (50 for a
     // circle of 100 px). `intensity` runs from 0 to 1 (how strong the updraft is right now, force / max force): a weak fire is
     // small and a strong one fills the circle. `flame` is the flame picture (its bottom edge is put on the ground), or nullptr

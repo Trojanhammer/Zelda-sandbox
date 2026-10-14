@@ -48,6 +48,9 @@ int main(int argc, char* argv[]) {
             else if(action == Gamepad::RecallAction && (MainPlayer -> weapon.state == Weapon::Thrown || MainPlayer -> weapon.state == Weapon::Idle) && (!MainPlayer -> weapon.recall.RecallCoord.empty())){
                 MainPlayer -> weapon.state = Weapon::Recalling;
             }
+            else if(action == Gamepad::BoxRecallAction && (metal_box -> state == Box::Idle || metal_box -> state == Box::Fly) && !metal_box -> recall.RecallCoord.empty()){
+                metal_box -> state = Box::Recalling;
+            }
             else if(action == Gamepad::FireAction){
                 fire = std::make_unique<Fire>();
             }
@@ -149,6 +152,13 @@ int main(int argc, char* argv[]) {
         SDL_RenderClear(renderer);
 
         Gfx::DrawGround(renderer, 462);   // the sword lands with its middle at y = 450 (Weapon.cpp) and is 25 px tall, so the surface is at 462
+        if(metal_box -> state == Box::Recalling){   // the golden frame, the path back and the see-through copy, behind the box
+            std::vector<SDL_FPoint> boxPathBack;    // the recorded dots from where it was let go up to where it is now
+            for(const auto& dot : metal_box -> recall.RecallCoord){
+                if(dot.time <= metal_box -> recall.RecallClock) boxPathBack.push_back({dot.posX, dot.posY});
+            }
+            Gfx::DrawBoxRecallEffect(renderer, metal_box -> posX, metal_box -> posY, 104, boxPathBack);
+        }
         Gfx::DrawBox(renderer, metal_box -> posX, metal_box -> posY, 104, magnesis != nullptr);   // the pointer exists only while magnesis holds it
         if(fire != nullptr && fire -> state == Fire::Firing && updraft != nullptr){   // the fire on the grass and its rising air, behind Link
             // How strong it looks, 0 to 1. While it fades the force starts at his weight (686), so measure it against that and not
