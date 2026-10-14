@@ -4,6 +4,10 @@ void Recall::Record(float posX, float posY){ // Record position of any of the mo
     RecallCoord.push_back({posX,posY,RecallClock});
 }
 
+void Recall::UpdateRecallClock(float deltaTime){ // when object starts moving, we need to record and update
+    RecallClock += deltaTime;
+}
+
 bool Recall::Rewind(float deltaTime, PhysicsObject& obj){ // send true or false to indicate whether rewind completed or not
     if(StartRecall == true){
         RecallCoord.erase(std::unique(RecallCoord.begin(), RecallCoord.end(), [](const auto& a, const auto& b){
@@ -37,7 +41,7 @@ bool Recall::Rewind(float deltaTime, PhysicsObject& obj){ // send true or false 
     return false;
 }
 
-void Recall::Clear(PhysicsObject& obj){
+void Recall::Clear(PhysicsObject& obj){ // clear when recall finished
     RecallClock=0.0f;
     obj.posX = RecallCoord[0].posX;
     obj.posY  = RecallCoord[0].posY;
@@ -46,4 +50,21 @@ void Recall::Clear(PhysicsObject& obj){
     obj.vY=0;
     StartRecall = true;
 }
+
+void Recall::RecallWhenIdle(float deltaTime,PhysicsObject& obj){
+    if((RecallClock < RecallLimit) &&  RecallClock > 0.0f){
+        UpdateRecallClock(deltaTime);
+        Record(obj.posX, obj.posY);
+    }
+    else if(RecallClock >= RecallLimit){ // Clear recallcoord when object is idle more than recalllimit time (3 seconds)
+        ClearRecallAbility();
+    }
+}
+
+void Recall::ClearRecallAbility(){ // discard the recall ability either when pickup/reach time limit
+    RecallCoord.clear();
+    RecallClock = 0.0f;
+}
+
+
 
