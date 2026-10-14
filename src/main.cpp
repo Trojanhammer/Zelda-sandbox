@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
         }
 
         const Uint8* keys = SDL_GetKeyboardState(nullptr); // read which key are hold down right now, read every frame
-        bool magnesisHeld = Gamepad::MagnesisHeld() || keys[SDL_SCANCODE_R];
+        bool magnesisHeld = Gamepad::MagnesisHeld() || keys[SDL_SCANCODE_R]; // runs on every frame to know false/true.If dont click recall,it will be false
         float sx =0, sy=0; // speed x & y of analog
         Gamepad::RightStick(sx,sy);
         sy = -sy; // right stick will give x and y value based on normal ones(atas (+))
@@ -66,6 +66,7 @@ int main(int argc, char* argv[]) {
         if(magnesisHeld){
             if(magnesis == nullptr){ // initialized once
                 magnesis = std::make_unique<Magnesis>();
+                metal_box -> state = Box::Magnesis;
             }
             if(sx !=0 || sy !=0){
                 float magnesisAngle = std::atan2(sy,sx) * 180.0f / 3.14159265f; // calculate angle of target pos and before.
@@ -77,8 +78,9 @@ int main(int argc, char* argv[]) {
                 metal_box -> lift = PhysicsObject::gravity;
             }
         }
-        else{
+        else if(magnesis !=nullptr){ // only delete & freed & change state to Fly when magnesisHeld is false and magnesis is exist (when magnesis button stop)
             magnesis.reset(); // delete ptr and freed the object
+            metal_box -> state = Box::Fly;
         }
 
         float stickAngle;
@@ -135,9 +137,9 @@ int main(int argc, char* argv[]) {
 
         MainPlayer -> UpdatePosition(deltaTime);
 
+        // here if button recall is clicked for box
 
-        // update position of metal_box in every frame 
-        metal_box -> UpdatePosition(deltaTime);
+        metal_box -> UpdateBox(deltaTime);
         
         MainPlayer -> UpdateWeapon(deltaTime,throwAngle);
 

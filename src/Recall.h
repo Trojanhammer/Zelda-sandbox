@@ -5,7 +5,7 @@
 
 class Recall {
     public:
-        float RecallLimit = 3.0f;
+        float RecallLimit = 3.0f; // 3 seconds
         float RecallClock = 0.0f;
         bool StartRecall = true;
         struct RecallPoint{
