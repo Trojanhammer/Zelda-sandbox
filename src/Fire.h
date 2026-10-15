@@ -1,12 +1,15 @@
 #pragma once
 #include "Updraft.h"
 #include "PhysicsObject.h"
+#include "Player.h"
+#include <memory>
+
 
 class Fire : public PhysicsObject{
     public:
         float diameter = 15; // 15 px
-        Updraft* updraft = nullptr;
-        bool isAlive = false;
+        std::unique_ptr<Updraft> updraft = nullptr;
+        bool isAlive = true;
         bool isUpDraft = false;
         enum State {
             Start_Throw,
@@ -18,4 +21,5 @@ class Fire : public PhysicsObject{
         Fire(){
             groundY = 450;
         }
+        void UpdateFire(float deltaTime,float throwAngle, Player& player);
 };

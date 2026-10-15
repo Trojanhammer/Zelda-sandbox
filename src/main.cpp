@@ -27,7 +27,6 @@ int main(int argc, char* argv[]) {
     bool PathChoice = true; // true to the right and vice versa
 
     std::unique_ptr<Fire>fire = nullptr;
-    std::unique_ptr<Updraft>updraft = nullptr;
     std::unique_ptr<Magnesis>magnesis = nullptr;
 
     auto metal_box = std::make_unique<Box>();
@@ -109,38 +108,16 @@ int main(int argc, char* argv[]) {
             MainPlayer -> RightWalk = PathChoice;
             MainPlayer -> Walking(deltaTime);
         }
-        if(fire!=nullptr){
-            if(fire -> state == Fire::Start_Throw){
-                fire -> posX = MainPlayer -> posX + MainPlayer -> Player::HandX;
-                fire -> posY = MainPlayer -> posY + MainPlayer -> Player::HandY;
-                MainPlayer -> Throw(throwAngle,*fire);
-                fire -> state = Fire::Thrown; 
+
+        if(fire!=nullptr){ // mark for deletion inside , but freed from outside
+            fire -> UpdateFire(deltaTime,throwAngle,*MainPlayer);
+            if(!(fire -> isAlive))
+            {
+                fire.reset();
             }
-            else if(fire -> state == Fire::Thrown){
-                fire -> UpdatePosition(deltaTime);
-                if(fire -> vX ==0 && fire -> vY ==0){
-                    fire -> state = Fire::Firing;
-                if(!fire -> isUpDraft){
-                    updraft = std::make_unique<Updraft>();             
-                }
-            }
-            }
-            else if(fire -> state == Fire::Firing){
-                updraft -> Update(deltaTime);
-                if(std::abs(fire -> posX - MainPlayer -> posX) <= 10){
-                    updraft -> Push(deltaTime,*MainPlayer);
-                }
-                if(updraft -> isFinished){
-                    fire.reset();
-                    updraft.reset();
-                    // delete both fire object and pointer here/
-            }
-            }
-        }
+        } 
 
         MainPlayer -> UpdatePosition(deltaTime);
-
-        // here if button recall is clicked for box
 
         metal_box -> UpdateBox(deltaTime);
         
@@ -160,11 +137,11 @@ int main(int argc, char* argv[]) {
             Gfx::DrawBoxRecallEffect(renderer, metal_box -> posX, metal_box -> posY, 104, boxPathBack);
         }
         Gfx::DrawBox(renderer, metal_box -> posX, metal_box -> posY, 104, magnesis != nullptr);   // the pointer exists only while magnesis holds it
-        if(fire != nullptr && fire -> state == Fire::Firing && updraft != nullptr){   // the fire on the grass and its rising air, behind Link
+        if(fire != nullptr && fire -> state == Fire::Firing && fire -> updraft != nullptr){   // the fire on the grass and its rising air, behind Link
             // How strong it looks, 0 to 1. While it fades the force starts at his weight (686), so measure it against that and not
             // against the maximum, otherwise the flame would jump from full to two thirds at 10 s.
-            float intensity = updraft -> decayStarted ? updraft -> updraft_force / Updraft::gravity_force
-                                                      : updraft -> updraft_force / Updraft::maxUpdraftForce;
+            float intensity = fire -> updraft -> decayStarted ? fire -> updraft -> updraft_force / Updraft::gravity_force
+                                                      : fire -> updraft -> updraft_force / Updraft::maxUpdraftForce;
             Gfx::DrawUpdraftColumn(renderer, fire -> posX, 462, 50, 340, intensity);   // 340 px tall: he is held about 319 px up, so his feet (at 462 - 319 = 143) stay inside
             Gfx::DrawFire(renderer, flameTexture, fire -> posX, 462, 50, intensity);
         }

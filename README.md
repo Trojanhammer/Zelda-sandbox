@@ -91,7 +91,7 @@ Needs SDL2 and SDL2_image (`brew install sdl2 sdl2_image`).
 | `src/Recall.h/.cpp` | Records the path an object flew and rewinds along it (3 s limit); the sword and the box each have one |
 | `src/Player.h/.cpp` | The player walks, holds the sword, throws things, and runs the sword's states in `UpdateWeapon` |
 | `src/PhysicsObject.h/.cpp` | What everything that moves shares (position, speed, gravity, lift); `Weapon`, `Player`, `Fire` and `Box` inherit it |
-| `src/Fire.h`, `src/Updraft.h/.cpp` | The thrown fire, and the updraft it makes when it lands |
+| `src/Fire.h/.cpp`, `src/Updraft.h/.cpp` | The thrown fire (it runs its own states in `UpdateFire` and owns its updraft), and the updraft it makes when it lands |
 | `src/Box.h/.cpp`, `src/Magnesis.h/.cpp` | The metal box (idle, magnesis, fly, recalling), and the magnesis that sets its speed while it is held |
 | `src/graphics/` | Drawing only: ground, hand, a sword that turns, a dotted aim line, a marker, loading / drawing / turning sprites, Link with swinging legs, and the metal box |
 | `docs/` | The GIFs shown in this README |
