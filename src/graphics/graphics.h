@@ -7,9 +7,15 @@
 namespace Gfx {
     const int WINDOW_W = 960;
     const int WINDOW_H = 540;
+    const int WORLD_W = 6000;   // how wide the world is (the window shows 960 of it; see camera.h)
 
-    // The ground: a brown block from groundY down to the bottom of the window.
+    // The ground: a brown block from groundY down to the bottom of the window, along the whole world (WORLD_W px, plus a little
+    // outside both ends so the window never shows an edge of it).
     void DrawGround(SDL_Renderer* renderer, float groundY);
+
+    // Marks on the ground so that you can see the camera move and how far something flew: a small tick every 100 px, a longer one
+    // with the number (the world x) every 500 px, and a tall post at both ends of the world. Draw it right after DrawGround.
+    void DrawWorldMarks(SDL_Renderer* renderer, float groundY);
 
     // A small dark square with its middle at (x, y). Stands for the hand the sword is thrown from.
     void DrawHand(SDL_Renderer* renderer, float x, float y);

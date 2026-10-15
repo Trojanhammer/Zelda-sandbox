@@ -2,6 +2,8 @@
 
 #include <SDL_image.h>
 
+#include "ui/ui.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -72,8 +74,27 @@ namespace Gfx {
 
 void DrawGround(SDL_Renderer* renderer, float groundY) {
     SDL_SetRenderDrawColor(renderer, 120, 100, 80, 255);
-    SDL_Rect ground = {0, (int)groundY, WINDOW_W, WINDOW_H - (int)groundY};
+    SDL_Rect ground = {-WINDOW_W, (int)groundY, WORLD_W + 2 * WINDOW_W, WINDOW_H - (int)groundY};
     SDL_RenderFillRect(renderer, &ground);
+}
+
+void DrawWorldMarks(SDL_Renderer* renderer, float groundY) {
+    int y = (int)groundY;
+    for (int x = 0; x <= WORLD_W; x += 100) {
+        bool every500 = (x % 500 == 0);
+        SDL_SetRenderDrawColor(renderer, every500 ? 235 : 165, every500 ? 220 : 145, every500 ? 190 : 115, 255);   // light marks on the brown ground
+        SDL_Rect tick = {x - 1, y, 3, every500 ? 16 : 7};
+        SDL_RenderFillRect(renderer, &tick);
+        if (every500) UI::DrawText(renderer, std::to_string(x), x + 6, y + 3, 2, SDL_Color{235, 220, 190, 255});   // beside the tick, clear of the text at the bottom of the window
+    }
+    for (int x : {0, WORLD_W}) {                                    // a tall post at each end of the world
+        SDL_SetRenderDrawColor(renderer, 60, 45, 35, 255);
+        SDL_Rect post = {x - 5, y - 150, 10, 150};
+        SDL_RenderFillRect(renderer, &post);
+        SDL_SetRenderDrawColor(renderer, 235, 190, 60, 255);
+        SDL_Rect cap = {x - 5, y - 150, 10, 10};
+        SDL_RenderFillRect(renderer, &cap);
+    }
 }
 
 void DrawHand(SDL_Renderer* renderer, float x, float y) {
@@ -302,14 +323,15 @@ void DrawBoxStasisEffect(SDL_Renderer* renderer, float x, float y, float size, f
         SDL_RenderDrawRect(renderer, &frame);
     }
 
-    // 2. the arrow: where it will go. Its length grows with the speed the hits stored (px/s): 20 px + 0.3 per px/s, at most 220 px.
+    // 2. the arrow: where it will go. Its length grows with the speed the hits stored (px/s): 20 px + 0.2 per px/s, at most 280 px
+    //    (for example 480 px/s = 116 px, 800 px/s = 180 px, 1200 px/s = 260 px).
     float speed = std::sqrt(storedVX * storedVX + storedVY * storedVY);
     float pi = 3.14159265f;
     float angle, length;
     bool stored = speed > 1.0f;
     if (stored) {
         angle = std::atan2(storedVY, storedVX);                      // the speed already points the way on the screen (y grows downward)
-        length = std::min(220.0f, 20.0f + 0.3f * speed);
+        length = std::min(280.0f, 20.0f + 0.2f * speed);
     } else {
         angle = -aimDegrees * pi / 180.0f;                           // no hit yet: the aim, as a short faint preview
         length = 46.0f;

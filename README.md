@@ -68,7 +68,7 @@ These come first, each in its own sandbox. The code is cleaned up first (the swo
 
 - L1 freezes the box for 4 s: no gravity and no speed, nothing moves. It turns yellow, an arrow shows where it will go (longer the more speed was stored), a bar above it shows the time left, and it flashes when it is hit.
 - R2 is a hit. The n-th hit adds n x 50 px/s in the direction of the left stick at that moment (0 to 180 degrees, so up and to the right or up and to the left), so four hits in the same direction store 500 px/s.
-- When the time is up the stored speed is given to the box once and the normal physics carries it: gravity, then friction on the ground. There is no limit on the stored speed yet: with the stick at 45 degrees three hits land about 100 px away, four about 270 px, and five already leave the screen.
+- When the time is up the stored speed is given to the box once and the normal physics carries it: gravity, then friction on the ground. There is no limit on the stored speed yet: with the stick at 45 degrees three hits land about 100 px away, four about 270 px, and five about 990 px, which is past the first screen (the camera follows the box).
 
 ## Build and run
 
@@ -106,7 +106,8 @@ Needs SDL2 and SDL2_image (`brew install sdl2 sdl2_image`).
 | `src/Fire.h/.cpp`, `src/Updraft.h/.cpp` | The thrown fire (it runs its own states in `UpdateFire` and owns its updraft), and the updraft it makes when it lands |
 | `src/Box.h/.cpp`, `src/Magnesis.h/.cpp` | The metal box (idle, magnesis, fly, recalling, stasis), and the magnesis that sets its speed while it is held |
 | `src/Stasis.h` | Counts the hits while the box is frozen: the n-th hit adds n x 50 px/s in the direction of the stick, and it tells when the 4 s are up |
-| `src/graphics/` | Drawing only: ground, hand, a sword that turns, a dotted aim line, a marker, loading / drawing / turning sprites, Link with swinging legs, the metal box, and its recall and stasis effects |
+| `src/graphics/` | Drawing only: ground, hand, a sword that turns, a dotted aim line, a marker, loading / drawing / turning sprites, Link with swinging legs, the metal box, its recall and stasis effects, and the ground marks |
+| `src/graphics/camera.h/.cpp` | The camera: the world is 6000 px wide and the window shows 960 of it. It follows Link, and the box while it flies sideways, and never shows outside the world. Everything is still drawn at its world position |
 | `docs/` | The GIFs shown in this README |
 | `assets/` | `link.png` (Link without a weapon), `master-sword.png`, `flame.png` and `fireball.png`, pixel art generated with AI and cleaned up (background removed, shrunk, 24 colors) |
 | `src/input/` | Gamepad: the left stick aims (as a throw angle), X throws the sword, O recalls it, square throws a fire, triangle recalls the box, L1 starts stasis, R2 hits, R1 held and the right stick for magnesis |

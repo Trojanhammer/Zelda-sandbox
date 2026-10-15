@@ -1,5 +1,6 @@
 #include "Player.h"
 #include "graphics/graphics.h"
+#include "graphics/camera.h"
 #include "ui/ui.h"
 #include "input/gamepad.h"
 #include "Fire.h"
@@ -32,6 +33,7 @@ int main(int argc, char* argv[]) {
     std::unique_ptr<Stasis> stasis = nullptr;
 
     auto metal_box = std::make_unique<Box>();
+    Camera camera;   // see graphics/camera.h
     auto lastTime = std::chrono::high_resolution_clock::now();
 
     while (running) {
@@ -144,7 +146,13 @@ int main(int argc, char* argv[]) {
         SDL_SetRenderDrawColor(renderer, 245, 245, 240, 255);
         SDL_RenderClear(renderer);
 
+        // The camera: the window follows Link, and follows the box while it flies (moving sideways), so you see where it lands.
+        float cameraTarget = (metal_box -> state == Box::Fly && std::abs(metal_box -> vX) > 20.0f) ? metal_box -> posX : MainPlayer -> posX;
+        camera.Follow(cameraTarget, deltaTime);
+        camera.Begin(renderer);   // from here to camera.End everything is drawn at its world position
+
         Gfx::DrawGround(renderer, 462);   // the sword lands with its middle at y = 450 (Weapon.cpp) and is 25 px tall, so the surface is at 462
+        Gfx::DrawWorldMarks(renderer, 462);   // ticks every 100 px and the distance every 500 px, so you can see the camera move
         if(metal_box -> state == Box::Recalling){   // the golden frame, the path back and the see-through copy, behind the box
             std::vector<SDL_FPoint> boxPathBack;    // the recorded dots from where it was let go up to where it is now
             for(const auto& dot : metal_box -> recall.RecallCoord){
@@ -186,6 +194,7 @@ int main(int argc, char* argv[]) {
             Gfx::DrawRecallEffect(renderer, swordGlow, MainPlayer -> weapon.posX, MainPlayer -> weapon.posY, swordAngle, pathBack);
         }
         Gfx::DrawSpriteRotated(renderer, swordTexture, MainPlayer -> weapon.posX, MainPlayer -> weapon.posY, swordAngle);
+        camera.End(renderer);   // the text below stays on the screen, it does not move with the world
         UI::DrawText(renderer, Gamepad::Connected() ? "CONTROLLER OK" : "NO CONTROLLER", 20, 20, 2, UI::DARK);
         UI::DrawTextCentered(renderer, "ZELDA SANDBOX", Gfx::WINDOW_W / 2, 10, 2, UI::DARK);
         UI::DrawText(renderer, "ESC: QUIT", 20, 500, 2, UI::DARK);
