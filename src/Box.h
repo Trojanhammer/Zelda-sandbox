@@ -9,7 +9,8 @@ class Box : public PhysicsObject { // ensure public and procted from parent stay
             Idle,
             Magnesis,
             Fly,
-            Recalling
+            Recalling,
+            Stasis
         };
         State state = Idle;
         Recall recall;

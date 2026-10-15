@@ -286,6 +286,68 @@ void DrawBoxRecallEffect(SDL_Renderer* renderer, float x, float y, float size, c
     }
 }
 
+void DrawBoxStasisEffect(SDL_Renderer* renderer, float x, float y, float size, float storedVX, float storedVY,
+                         float aimDegrees, float timeLeft, float flash) {
+    int s = (int)size;
+    int left = (int)x - s / 2, top = (int)y - s / 2;
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
+    // 1. the yellow tint over the whole box, and a frame around it (a frozen box: nothing flickers, only the time bar moves)
+    SDL_SetRenderDrawColor(renderer, 255, 190, 40, 85);
+    SDL_Rect body = {left, top, s, s};
+    SDL_RenderFillRect(renderer, &body);
+    SDL_SetRenderDrawColor(renderer, 255, 190, 40, 235);
+    for (int i = 0; i < 3; i++) {                                   // a frame 3 px thick, just outside the box
+        SDL_Rect frame = {left - 1 - i, top - 1 - i, s + 2 + 2 * i, s + 2 + 2 * i};
+        SDL_RenderDrawRect(renderer, &frame);
+    }
+
+    // 2. the arrow: where it will go. Its length grows with the speed the hits stored (px/s): 20 px + 0.3 per px/s, at most 220 px.
+    float speed = std::sqrt(storedVX * storedVX + storedVY * storedVY);
+    float pi = 3.14159265f;
+    float angle, length;
+    bool stored = speed > 1.0f;
+    if (stored) {
+        angle = std::atan2(storedVY, storedVX);                      // the speed already points the way on the screen (y grows downward)
+        length = std::min(220.0f, 20.0f + 0.3f * speed);
+    } else {
+        angle = -aimDegrees * pi / 180.0f;                           // no hit yet: the aim, as a short faint preview
+        length = 46.0f;
+    }
+    float dx = std::cos(angle), dy = std::sin(angle);
+    float startX = x + dx * (s / 2 - 6), startY = y + dy * (s / 2 - 6);   // it starts inside the edge of the box
+    float tipX = x + dx * (s / 2 + length), tipY = y + dy * (s / 2 + length);
+    Uint8 alpha = stored ? 255 : 130;
+    float shaftLength = std::sqrt((tipX - startX) * (tipX - startX) + (tipY - startY) * (tipY - startY)) - 14.0f;   // the head is 14 px long
+    if (shaftLength > 0) {
+        FillTurnedRect(renderer, (startX + tipX) / 2 - dx * 7, (startY + tipY) / 2 - dy * 7, shaftLength, 9, angle, SDL_Color{150, 90, 0, alpha});   // dark edge
+        FillTurnedRect(renderer, (startX + tipX) / 2 - dx * 7, (startY + tipY) / 2 - dy * 7, shaftLength, 5, angle, SDL_Color{255, 205, 40, alpha});
+    }
+    float baseX = tipX - dx * 14, baseY = tipY - dy * 14, px = -dy, py = dx;     // the head: a triangle, tip first
+    SDL_Vertex head[3];
+    head[0].position = {tipX + dx * 3, tipY + dy * 3};
+    head[1].position = {baseX + px * 10, baseY + py * 10};
+    head[2].position = {baseX - px * 10, baseY - py * 10};
+    for (int i = 0; i < 3; i++) { head[i].color = SDL_Color{255, 205, 40, alpha}; head[i].tex_coord = {0, 0}; }
+    SDL_RenderGeometry(renderer, nullptr, head, 3, nullptr, 0);
+
+    // 3. the time left: a bar above the box that shrinks to nothing
+    if (timeLeft < 0) timeLeft = 0;
+    if (timeLeft > 1) timeLeft = 1;
+    SDL_Rect barBack = {left, top - 18, s, 8};
+    SDL_SetRenderDrawColor(renderer, 60, 45, 10, 170);
+    SDL_RenderFillRect(renderer, &barBack);
+    SDL_Rect barFill = {left + 1, top - 17, (int)((s - 2) * timeLeft), 6};
+    SDL_SetRenderDrawColor(renderer, 255, 200, 40, 255);
+    SDL_RenderFillRect(renderer, &barFill);
+
+    // 4. a flash when it is hit: the whole box goes bright for a moment
+    if (flash > 0) {
+        SDL_SetRenderDrawColor(renderer, 255, 250, 200, (Uint8)(190 * std::min(1.0f, flash)));
+        SDL_RenderFillRect(renderer, &body);
+    }
+}
+
 void DrawFire(SDL_Renderer* renderer, SDL_Texture* flame, float x, float groundY, float radius, float intensity) {
     intensity = std::clamp(intensity, 0.0f, 1.0f);
     float t = SDL_GetTicks() / 1000.0f;                 // only used to make the flame flicker

@@ -2,7 +2,7 @@
 #include <SDL.h>
 
 // DualSense (or any gamepad) for the sandbox: the left stick aims, X throws the sword, O recalls it, square throws a fire,
-// triangle recalls the box, R1 held + the right stick = magnesis.
+// triangle recalls the box, L1 starts stasis, R2 hits (HitPressed), R1 held + the right stick = magnesis.
 // SDL calls the cross button "A", the circle button "B", the square button "X" and the triangle button "Y"
 // (it names buttons by their place on an Xbox pad).
 namespace Gamepad {
@@ -32,8 +32,15 @@ namespace Gamepad {
     // (For magnesis: held = the object is held up, let go = it falls.)
     bool MagnesisHeld();
 
-    enum Action { NoAction, ThrowAction, RecallAction, FireAction, BoxRecallAction };
+    // Did the hit button (R2, the right trigger) go down THIS frame? true for exactly one frame per press, however long it is held:
+    // it is true on the frame the trigger is pushed in far enough, and false again until it has been let go and pressed again.
+    // Ask once per frame (it remembers the frame before). Returns false when no pad is plugged in.
+    //     bool hit = Gamepad::HitPressed();
+    bool HitPressed();
+
+    enum Action { NoAction, ThrowAction, RecallAction, FireAction, BoxRecallAction, StasisAction };
     // What a button press asks for: X (cross) = ThrowAction, O (circle) = RecallAction, square = FireAction,
-    // triangle = BoxRecallAction (recall the metal box), anything else (or not a button press) = NoAction.
+    // triangle = BoxRecallAction (recall the metal box), L1 = StasisAction (freeze the box in time),
+    // anything else (or not a button press) = NoAction.
     Action ActionFromEvent(const SDL_Event& event);
 }

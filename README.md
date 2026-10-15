@@ -8,7 +8,7 @@ A 2D sandbox for the mechanics of *Tears of the Kingdom* and *Breath of the Wild
 
 *Recall, the first mechanic: the left stick aims, X throws, O recalls it along the path it flew (the golden line and rim). The second recall happens after he walked away, so the sword falls and he walks back to pick it up. Recorded from the game itself, played by a scripted virtual gamepad and arrow keys.*
 
-> **How this was built (AI use):** the mechanics and the physics (`Weapon`, `Player`, `Fire`, `Updraft`, `Magnesis`, `Box`, `Recall`, the throw, gravity, landing, friction, the recall, walking and picking the sword up) are written by me, by hand: I discuss an idea with Claude, write it myself until I understand it, and ask Claude to review it. The exceptions, written with AI to move faster: the SDL2 window and drawing helpers (`src/graphics/`, including the legs that swing when Link walks and the metal box; `src/ui/`, which draws text with a built-in pixel font), the gamepad code (`src/input/`), the drawing lines in `main.cpp`, and the build script.
+> **How this was built (AI use):** the mechanics and the physics (`Weapon`, `Player`, `Fire`, `Updraft`, `Magnesis`, `Box`, `Recall`, `Stasis`, the throw, gravity, landing, friction, the recall, walking and picking the sword up) are written by me, by hand: I discuss an idea with Claude, write it myself until I understand it, and ask Claude to review it. The exceptions, written with AI to move faster: the SDL2 window and drawing helpers (`src/graphics/`, including the legs that swing when Link walks and the metal box; `src/ui/`, which draws text with a built-in pixel font), the gamepad code (`src/input/`), the drawing lines in `main.cpp`, and the build script.
 
 > **Disclaimer:** This is an unofficial fan project with no affiliation to Nintendo. *The Legend of Zelda* and its characters belong to Nintendo; this is built purely for personal learning and hobby purposes, with no plan to release or distribute it.
 
@@ -19,9 +19,9 @@ A 2D sandbox for the mechanics of *Tears of the Kingdom* and *Breath of the Wild
 | Recall: throw a sword, then call it back along the way it came | done: aim and throw, rewind along the path it flew (in the air or from the grass), the sword falls if you walked away, and you can pick it up again. With a simple recall effect. The metal box can be recalled too (same `Recall` code), see the magnesis section |
 | Updraft: fire heats the air above it and lifts things up | first version done: throw a fire, and Link is lifted while he stands in it (see below) |
 | Magnesis: Link's power to grab a metal object and move it | first version done: hold R1 and move a big metal box any way with the right stick, and it glows while it is held (see below). Both tests pass: it carries its speed when I let go, and if I let go in the air it falls |
-| Stasis: lock an object in time | planned, not researched yet: hit the locked object many times, and when time starts again it flies away with all that force, to the end of the world |
+| Stasis: lock an object in time | first version works (see below): L1 freezes the box for 4 s, R2 hits it (the left stick sets the direction of each hit), a yellow tint, an arrow and a time bar show what is stored, and when time starts again it flies away with the speed the hits gave it. Still to do: only counting hits that are close enough, and a limit on how much it can store |
 
-These come first, each in its own sandbox. **Next, before Stasis, I want to clean up the code** and look for a way to avoid so many `if` / `else if` chains in `main.cpp`. Later I also want a Bokoblin as an enemy to try the mechanics on, and after that more mechanics from the two games as time allows.
+These come first, each in its own sandbox. The code is cleaned up first (the sword, fire and box each run their own states instead of one long `if` / `else if` chain in `main.cpp`), and Stasis is being finished now. Later I also want a Bokoblin as an enemy to try the mechanics on, and after that more mechanics from the two games as time allows.
 
 ### How the recall works here
 
@@ -60,6 +60,16 @@ These come first, each in its own sandbox. **Next, before Stasis, I want to clea
 
 - The box has its own `Recall`, the same code as the sword's. It records its path from the moment it is let go (not while magnesis holds it), so a recall brings it back to where it was let go, and from there it falls again. The triangle button works while it flies or lies still, as long as there is a path to go back along. It gets the same golden look as the sword while it goes back: a golden frame, a see-through copy where it will end up, and a golden line along the path.
 
+### How stasis works here
+
+![L1 freezes the box, four hits with R2 store speed in the direction of the stick, and when the time is up it flies away](docs/stasis.gif)
+
+*Stasis: L1 freezes the box, four hits (R2) with the stick pointing up and to the right each add speed, the arrow grows, and when the 4 s are up the box flies away (recorded from the game itself, played by a scripted virtual gamepad).*
+
+- L1 freezes the box for 4 s: no gravity and no speed, nothing moves. It turns yellow, an arrow shows where it will go (longer the more speed was stored), a bar above it shows the time left, and it flashes when it is hit.
+- R2 is a hit. The n-th hit adds n x 50 px/s in the direction of the left stick at that moment (0 to 180 degrees, so up and to the right or up and to the left), so four hits in the same direction store 500 px/s.
+- When the time is up the stored speed is given to the box once and the normal physics carries it: gravity, then friction on the ground. There is no limit on the stored speed yet: with the stick at 45 degrees three hits land about 100 px away, four about 270 px, and five already leave the screen.
+
 ## Build and run
 
 ```bash
@@ -78,6 +88,8 @@ Needs SDL2 and SDL2_image (`brew install sdl2 sdl2_image`).
 | O | Recall the sword (in the air or on the ground) |
 | Square | Throw a fire |
 | Triangle | Recall the box (after it was let go, in the air or on the ground) |
+| L1 | Stasis: freeze the box (it stays frozen for 4 s, then flies away) |
+| R2 | Hit the frozen box (the direction is where the left stick points) |
 | R1 (or R), held | Magnesis: grab the box (let go and it falls) |
 | Right stick (or Up / Down arrow), while R1 is held | Move the box |
 | Esc | Quit |
@@ -92,9 +104,10 @@ Needs SDL2 and SDL2_image (`brew install sdl2 sdl2_image`).
 | `src/Player.h/.cpp` | The player walks, holds the sword, throws things, and runs the sword's states in `UpdateWeapon` |
 | `src/PhysicsObject.h/.cpp` | What everything that moves shares (position, speed, gravity, lift); `Weapon`, `Player`, `Fire` and `Box` inherit it |
 | `src/Fire.h/.cpp`, `src/Updraft.h/.cpp` | The thrown fire (it runs its own states in `UpdateFire` and owns its updraft), and the updraft it makes when it lands |
-| `src/Box.h/.cpp`, `src/Magnesis.h/.cpp` | The metal box (idle, magnesis, fly, recalling), and the magnesis that sets its speed while it is held |
-| `src/graphics/` | Drawing only: ground, hand, a sword that turns, a dotted aim line, a marker, loading / drawing / turning sprites, Link with swinging legs, and the metal box |
+| `src/Box.h/.cpp`, `src/Magnesis.h/.cpp` | The metal box (idle, magnesis, fly, recalling, stasis), and the magnesis that sets its speed while it is held |
+| `src/Stasis.h` | Counts the hits while the box is frozen: the n-th hit adds n x 50 px/s in the direction of the stick, and it tells when the 4 s are up |
+| `src/graphics/` | Drawing only: ground, hand, a sword that turns, a dotted aim line, a marker, loading / drawing / turning sprites, Link with swinging legs, the metal box, and its recall and stasis effects |
 | `docs/` | The GIFs shown in this README |
 | `assets/` | `link.png` (Link without a weapon), `master-sword.png`, `flame.png` and `fireball.png`, pixel art generated with AI and cleaned up (background removed, shrunk, 24 colors) |
-| `src/input/` | Gamepad: the left stick aims (as a throw angle), X throws the sword, O recalls it, square throws a fire, triangle recalls the box, R1 held and the right stick for magnesis |
+| `src/input/` | Gamepad: the left stick aims (as a throw angle), X throws the sword, O recalls it, square throws a fire, triangle recalls the box, L1 starts stasis, R2 hits, R1 held and the right stick for magnesis |
 | `src/ui/` | Text drawn with a small built-in 5x7 pixel font (no SDL_ttf) |

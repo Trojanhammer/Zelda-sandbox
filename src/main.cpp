@@ -4,6 +4,7 @@
 #include "input/gamepad.h"
 #include "Fire.h"
 #include "Magnesis.h"
+#include "Stasis.h"
 
 #include <SDL.h>
 #include <memory>
@@ -23,11 +24,12 @@ int main(int argc, char* argv[]) {
     SDL_Texture* fireballTexture = Gfx::LoadTexture(renderer, "assets/fireball.png");   // what is thrown
     bool running = true;
     SDL_Event event;
-    float throwAngle=0.0f;
+    float aimAngle=0.0f;   // the direction the left stick points (0 to 180 degrees): used for throwing, aiming and hitting
     bool PathChoice = true; // true to the right and vice versa
 
-    std::unique_ptr<Fire>fire = nullptr;
-    std::unique_ptr<Magnesis>magnesis = nullptr;
+    std::unique_ptr<Fire> fire = nullptr;
+    std::unique_ptr<Magnesis> magnesis = nullptr;
+    std::unique_ptr<Stasis> stasis = nullptr;
 
     auto metal_box = std::make_unique<Box>();
     auto lastTime = std::chrono::high_resolution_clock::now();
@@ -49,6 +51,12 @@ int main(int argc, char* argv[]) {
             }
             else if(action == Gamepad::BoxRecallAction && (metal_box -> state == Box::Idle || metal_box -> state == Box::Fly) && !metal_box -> recall.RecallCoord.empty()){
                 metal_box -> state = Box::Recalling;
+            }
+            else if(action == Gamepad::StasisAction && stasis == nullptr && (metal_box -> state == Box::Idle || metal_box -> state == Box::Fly)){
+                stasis = std::make_unique<Stasis>();
+                metal_box -> state = Box::Stasis;     // beku bermula di sini, bukan di hujung
+                metal_box -> vX = 0;
+                metal_box -> vY = 0;
             }
             else if(action == Gamepad::FireAction){
                 fire = std::make_unique<Fire>();
@@ -84,10 +92,18 @@ int main(int argc, char* argv[]) {
             magnesis.reset(); // delete ptr and freed the object
             metal_box -> state = Box::Fly;
         }
-
         float stickAngle;
-        if(Gamepad::AimAngle(stickAngle)) throwAngle = stickAngle;
+        if(Gamepad::AimAngle(stickAngle)) aimAngle = stickAngle;
+        bool hit = Gamepad::HitPressed();
+        //sini ada button untuk tekan stasis and tekan hit sekali
         
+        if(stasis != nullptr){
+            if(stasis -> UpdateStasis(hit,deltaTime,aimAngle, *metal_box)){
+                metal_box -> state = Box::Fly;
+                stasis.reset();
+            }
+        }
+
         bool leftHeld = keys[SDL_SCANCODE_LEFT];
         bool rightHeld = keys[SDL_SCANCODE_RIGHT];
 
@@ -110,18 +126,18 @@ int main(int argc, char* argv[]) {
         }
 
         if(fire!=nullptr){ // mark for deletion inside , but freed from outside
-            fire -> UpdateFire(deltaTime,throwAngle,*MainPlayer);
+            fire -> UpdateFire(deltaTime,aimAngle,*MainPlayer);
             if(!(fire -> isAlive))
             {
                 fire.reset();
             }
-        } 
+        }
 
         MainPlayer -> UpdatePosition(deltaTime);
 
         metal_box -> UpdateBox(deltaTime);
         
-        MainPlayer -> UpdateWeapon(deltaTime,throwAngle);
+        MainPlayer -> UpdateWeapon(deltaTime,aimAngle);
 
 
 //---------------- RENDER -------------------------------------------------------------------------------
@@ -137,6 +153,12 @@ int main(int argc, char* argv[]) {
             Gfx::DrawBoxRecallEffect(renderer, metal_box -> posX, metal_box -> posY, 104, boxPathBack);
         }
         Gfx::DrawBox(renderer, metal_box -> posX, metal_box -> posY, 104, magnesis != nullptr);   // the pointer exists only while magnesis holds it
+        static float stasisFlash = 0.0f;   // 1 on the frame of a hit, then it fades in about 0.17 s
+        stasisFlash = (hit && stasis != nullptr) ? 1.0f : (stasisFlash > deltaTime * 6.0f ? stasisFlash - deltaTime * 6.0f : 0.0f);
+        if(stasis != nullptr){   // the yellow tint, the arrow of the speed the hits stored, the time left, on top of the box
+            Gfx::DrawBoxStasisEffect(renderer, metal_box -> posX, metal_box -> posY, 104, metal_box -> vX, metal_box -> vY, aimAngle,
+                                     1.0f - stasis -> time_record / stasis -> timeLimit, stasisFlash);
+        }
         if(fire != nullptr && fire -> state == Fire::Firing && fire -> updraft != nullptr){   // the fire on the grass and its rising air, behind Link
             // How strong it looks, 0 to 1. While it fades the force starts at his weight (686), so measure it against that and not
             // against the maximum, otherwise the flame would jump from full to two thirds at 10 s.
@@ -151,10 +173,10 @@ int main(int argc, char* argv[]) {
         }
         // The sword points along the aim while it is held, and the way it moves while it flies (the picture points right at angle 0).
         // Screen y points down, so an aim of 30 degrees upward is a rotation of -30.
-        float swordAngle = (MainPlayer -> weapon.state == Weapon::Held) ? -throwAngle * 3.14159265f / 180.0f
+        float swordAngle = (MainPlayer -> weapon.state == Weapon::Held) ? -aimAngle * 3.14159265f / 180.0f
                                                                         : std::atan2(MainPlayer -> weapon.vY, MainPlayer -> weapon.vX);
         if(MainPlayer -> weapon.state == Weapon::Held){
-            Gfx::DrawAimLine(renderer, MainPlayer -> weapon.posX, MainPlayer -> weapon.posY, throwAngle);
+            Gfx::DrawAimLine(renderer, MainPlayer -> weapon.posX, MainPlayer -> weapon.posY, aimAngle);
         }
         if(MainPlayer -> weapon.state == Weapon::Recalling){   // glow + the path back, behind the sword
             std::vector<SDL_FPoint> pathBack;                  // the recorded dots from the start of the throw up to where the sword is now

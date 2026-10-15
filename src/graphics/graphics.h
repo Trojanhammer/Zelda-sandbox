@@ -56,6 +56,14 @@ namespace Gfx {
     // order, `size` is the box's size in px (the same as DrawBox). Call it BEFORE DrawBox, so the frame sits behind the box.
     void DrawBoxRecallEffect(SDL_Renderer* renderer, float x, float y, float size, const std::vector<SDL_FPoint>& path);
 
+    // The look of a box that is frozen in time (stasis), drawn ON TOP of DrawBox: a yellow tint and frame, an arrow that shows where
+    // it will fly when time starts again (it points the way of the speed the hits stored, storedVX and storedVY in px/s, and the
+    // harder it was hit the longer it is), a bar above it with the time left, and a bright flash on a hit.
+    // Before the first hit there is no speed yet, so a short faint arrow shows the aim (aimDegrees, 0 = right, 90 = up) instead.
+    // timeLeft goes from 1 (just frozen) to 0 (time is up) and flash from 1 (a hit just happened) to 0. Nothing moves in it: frozen.
+    void DrawBoxStasisEffect(SDL_Renderer* renderer, float x, float y, float size, float storedVX, float storedVY,
+                             float aimDegrees, float timeLeft, float flash);
+
     // The fire on the ground for the updraft. Its base sits at (x, groundY); `radius` is half of its width on the grass (50 for a
     // circle of 100 px). `intensity` runs from 0 to 1 (how strong the updraft is right now, force / max force): a weak fire is
     // small and a strong one fills the circle. `flame` is the flame picture (its bottom edge is put on the ground), or nullptr

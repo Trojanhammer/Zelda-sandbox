@@ -6,8 +6,11 @@ void Box::UpdateBox(float deltaTime){
             recall.RecallWhenIdle(deltaTime,*this); // *this means its object
             break;
 
-        case Box::Magnesis :
+        case Box::Magnesis:
             UpdatePosition(deltaTime);
+            break;
+            
+        case Box::Stasis:
             break;
 
         case Box::Fly :
