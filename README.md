@@ -19,7 +19,7 @@ A 2D sandbox for the mechanics of *Tears of the Kingdom* and *Breath of the Wild
 | Recall: throw a sword, then call it back along the way it came | done: aim and throw, rewind along the path it flew (in the air or from the grass), the sword falls if you walked away, and you can pick it up again. With a simple recall effect. The metal box can be recalled too (same `Recall` code), see the magnesis section |
 | Updraft: fire heats the air above it and lifts things up | first version done: throw a fire, and Link is lifted while he stands in it (see below) |
 | Magnesis: Link's power to grab a metal object and move it | first version done: hold R1 and move a big metal box any way with the right stick, and it glows while it is held (see below). Both tests pass: it carries its speed when I let go, and if I let go in the air it falls |
-| Stasis: lock an object in time | first version works (see below): L1 freezes the box for 4 s, R2 hits it (the left stick sets the direction of each hit), a yellow tint, an arrow and a time bar show what is stored, and when time starts again it flies away with the speed the hits gave it. Still to do: only counting hits that are close enough, and a limit on how much it can store |
+| Stasis: lock an object in time | first version works (see below): L1 freezes the box for 4 s, R2 hits it (the left stick sets the direction of each hit), a yellow tint, an arrow and a time bar show what is stored, and when time starts again it flies away with the speed the hits gave it. A hit only counts when Link is close to the box, and a box stores at most 5 hits |
 
 These come first, each in its own sandbox. The code is cleaned up first (the sword, fire and box each run their own states instead of one long `if` / `else if` chain in `main.cpp`), and Stasis is being finished now. Later I also want a Bokoblin as an enemy to try the mechanics on, and after that more mechanics from the two games as time allows.
 
@@ -62,13 +62,13 @@ These come first, each in its own sandbox. The code is cleaned up first (the swo
 
 ### How stasis works here
 
-![L1 freezes the box, four hits with R2 store speed in the direction of the stick, and when the time is up it flies away](docs/stasis.gif)
+![Link walks up to the box, L1 freezes it, five hits with R2 store speed in the direction of the stick, and when the time is up it flies away and the camera follows it](docs/stasis.gif)
 
-*Stasis: L1 freezes the box, four hits (R2) with the stick pointing up and to the right each add speed, the arrow grows, and when the 4 s are up the box flies away (recorded from the game itself, played by a scripted virtual gamepad).*
+*Stasis: Link walks up to the box, L1 freezes it, five hits (R2) with the stick pointing up and to the right each add speed (the arrow grows), and when the 4 s are up the box flies about 1500 px away while the camera follows it (recorded from the game itself, played by a scripted virtual gamepad and an arrow key).*
 
 - L1 freezes the box for 4 s: no gravity and no speed, nothing moves. It turns yellow, an arrow shows where it will go (longer the more speed was stored), a bar above it shows the time left, and it flashes when it is hit.
-- R2 is a hit. The n-th hit adds n x 50 px/s in the direction of the left stick at that moment (0 to 180 degrees, so up and to the right or up and to the left), so four hits in the same direction store 500 px/s.
-- When the time is up the stored speed is given to the box once and the normal physics carries it: gravity, then friction on the ground. There is no limit on the stored speed yet: with the stick at 45 degrees three hits land about 100 px away, four about 270 px, and five about 990 px, which is past the first screen (the camera follows the box).
+- R2 is a hit, and it only counts when Link is within 20 px of the box. The n-th hit adds n x 80 px/s in the direction of the left stick at that moment (0 to 180 degrees, so up and to the right or up and to the left), and a box stores at most 5 hits, so five hits in the same direction store 1200 px/s.
+- When the time is up the stored speed is given to the box once and the normal physics carries it: gravity, then friction on the ground. With the stick at 45 degrees three hits throw it about 245 px, four about 670 px and five about 1490 px (the camera follows it, and stays on it for a moment after it lands).
 
 ## Build and run
 
@@ -89,7 +89,7 @@ Needs SDL2 and SDL2_image (`brew install sdl2 sdl2_image`).
 | Square | Throw a fire |
 | Triangle | Recall the box (after it was let go, in the air or on the ground) |
 | L1 | Stasis: freeze the box (it stays frozen for 4 s, then flies away) |
-| R2 | Hit the frozen box (the direction is where the left stick points) |
+| R2 | Hit the frozen box (the direction is where the left stick points; Link must be close to it) |
 | R1 (or R), held | Magnesis: grab the box (let go and it falls) |
 | Right stick (or Up / Down arrow), while R1 is held | Move the box |
 | Esc | Quit |
@@ -105,7 +105,7 @@ Needs SDL2 and SDL2_image (`brew install sdl2 sdl2_image`).
 | `src/PhysicsObject.h/.cpp` | What everything that moves shares (position, speed, gravity, lift); `Weapon`, `Player`, `Fire` and `Box` inherit it |
 | `src/Fire.h/.cpp`, `src/Updraft.h/.cpp` | The thrown fire (it runs its own states in `UpdateFire` and owns its updraft), and the updraft it makes when it lands |
 | `src/Box.h/.cpp`, `src/Magnesis.h/.cpp` | The metal box (idle, magnesis, fly, recalling, stasis), and the magnesis that sets its speed while it is held |
-| `src/Stasis.h` | Counts the hits while the box is frozen: the n-th hit adds n x 50 px/s in the direction of the stick, and it tells when the 4 s are up |
+| `src/Stasis.h` | Counts the hits while the box is frozen: the n-th hit (at most 5) adds n x 80 px/s in the direction of the stick, and it tells when the 4 s are up |
 | `src/graphics/` | Drawing only: ground, hand, a sword that turns, a dotted aim line, a marker, loading / drawing / turning sprites, Link with swinging legs, the metal box, its recall and stasis effects, and the ground marks |
 | `src/graphics/camera.h/.cpp` | The camera: the world is 6000 px wide and the window shows 960 of it. It follows Link, and the box while it flies sideways, and never shows outside the world. Everything is still drawn at its world position |
 | `docs/` | The GIFs shown in this README |

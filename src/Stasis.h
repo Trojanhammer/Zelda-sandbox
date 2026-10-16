@@ -7,15 +7,16 @@ class Stasis {
     public:
         float timeLimit = 4.0f ; // 4 seconds
         float time_record = 0.0f;
-        static constexpr float velocity = 50.0f ; // the n-th hit adds n * 50 px/s (1st: 50, 2nd: 100, 3rd: 150, ...)
+        static constexpr float velocity = 80.0f ; // 80 px/s for every time hitting
         int hit_frequency = 0;
+        static constexpr int max_hit = 5;
     public:
         bool UpdateStasis(bool hit,float deltaTime,float angleDegrees,PhysicsObject& obj){ // this fx will invoke on how many times it is been hit
             time_record += deltaTime;
             if(time_record >= timeLimit){
                 return true;
             }
-            if(hit){
+            if(hit && hit_frequency < max_hit){
                 hit_frequency += 1;
                 float const PI = 3.14159265f;
                 float angleRadian = angleDegrees * (PI/180.0f);

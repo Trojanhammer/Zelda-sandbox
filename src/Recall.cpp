@@ -10,6 +10,7 @@ void Recall::UpdateRecallClock(float deltaTime){ // when object starts moving, w
 
 bool Recall::Rewind(float deltaTime, PhysicsObject& obj){ // send true or false to indicate whether rewind completed or not
     if(StartRecall == true){
+        // removing duplicates of coordinate to get the vectors of moving only
         RecallCoord.erase(std::unique(RecallCoord.begin(), RecallCoord.end(), [](const auto& a, const auto& b){
         return (a.posX == b.posX) && (a.posY == b.posY);}), RecallCoord.end());
         RecallClock = std::min(RecallClock,RecallCoord.back().time);

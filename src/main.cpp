@@ -96,7 +96,10 @@ int main(int argc, char* argv[]) {
         }
         float stickAngle;
         if(Gamepad::AimAngle(stickAngle)) aimAngle = stickAngle;
-        bool hit = Gamepad::HitPressed();
+        bool hit = Gamepad::HitPressed();   // asked on every frame (it remembers the trigger from the frame before), then only counted when he is close
+        if(std::abs(MainPlayer -> posX - metal_box -> posX) >= 20){
+            hit = false;   // too far from the box: not a hit
+        }
         //sini ada button untuk tekan stasis and tekan hit sekali
         
         if(stasis != nullptr){
@@ -146,8 +149,12 @@ int main(int argc, char* argv[]) {
         SDL_SetRenderDrawColor(renderer, 245, 245, 240, 255);
         SDL_RenderClear(renderer);
 
-        // The camera: the window follows Link, and follows the box while it flies (moving sideways), so you see where it lands.
-        float cameraTarget = (metal_box -> state == Box::Fly && std::abs(metal_box -> vX) > 20.0f) ? metal_box -> posX : MainPlayer -> posX;
+        // The camera: the window follows Link, and follows the box while it flies (moving sideways), and keeps looking at it for
+        // 1.5 s after it stops, so you can see where it landed before the window goes back to Link.
+        static float cameraLinger = 0.0f;
+        bool boxFlying = (metal_box -> state == Box::Fly && std::abs(metal_box -> vX) > 20.0f);
+        cameraLinger = boxFlying ? 1.5f : (cameraLinger > deltaTime ? cameraLinger - deltaTime : 0.0f);
+        float cameraTarget = (cameraLinger > 0.0f) ? metal_box -> posX : MainPlayer -> posX;
         camera.Follow(cameraTarget, deltaTime);
         camera.Begin(renderer);   // from here to camera.End everything is drawn at its world position
 

@@ -19,6 +19,8 @@ void Player::Throw(float angleDegrees,PhysicsObject& obj){
 void Player::Walking(float deltaTime){
     float pickuprange = 50;
     posX += RightWalk? walking_speed * deltaTime : -walking_speed * deltaTime;
+    if (posX < 20) posX = 20; // prevent from unlimited world size
+    if(posX > 5980) posX = 5980;
     if((abs(posX-weapon.posX) < pickuprange) && (weapon.state == Weapon::Idle)){
         Pickup(HandX, HandY);
     }
