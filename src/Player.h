@@ -6,6 +6,8 @@ class Player : public PhysicsObject {
     public:
         float throwing_speed = 800; // 800px/s
         float walking_speed = 150;
+        float health = 100;
+        float attack_power = 50;
         
         static constexpr float mass = 70.0f;
         static constexpr float HandX = 22.0f; // distance between link pos to its hand(sword)

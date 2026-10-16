@@ -6,6 +6,7 @@
 #include "Fire.h"
 #include "Magnesis.h"
 #include "Stasis.h"
+#include "Monster.h"
 
 #include <SDL.h>
 #include <memory>
@@ -23,6 +24,8 @@ int main(int argc, char* argv[]) {
     SDL_Texture* swordGlow = Gfx::LoadSilhouette(renderer, "assets/master-sword.png", SDL_Color{255, 205, 40, 255});   // the same shape in flat yellow, for the recall glow
     SDL_Texture* flameTexture = Gfx::LoadTexture(renderer, "assets/flame.png");         // the fire on the grass
     SDL_Texture* fireballTexture = Gfx::LoadTexture(renderer, "assets/fireball.png");   // what is thrown
+    Gfx::MonsterSprites bokoSprites = {Gfx::LoadTexture(renderer, "assets/bokoblin.png"), Gfx::LoadTexture(renderer, "assets/club.png"),
+                                       Gfx::LoadSilhouette(renderer, "assets/bokoblin.png", SDL_Color{255, 40, 30, 255})};   // body, club, the body in red (for the wind-up)
     bool running = true;
     SDL_Event event;
     float aimAngle=0.0f;   // the direction the left stick points (0 to 180 degrees): used for throwing, aiming and hitting
@@ -33,6 +36,7 @@ int main(int argc, char* argv[]) {
     std::unique_ptr<Stasis> stasis = nullptr;
 
     auto metal_box = std::make_unique<Box>();
+    auto bokoblin = std::make_unique<Monster>();
     Camera camera;   // see graphics/camera.h
     auto lastTime = std::chrono::high_resolution_clock::now();
 
@@ -144,6 +148,8 @@ int main(int argc, char* argv[]) {
         
         MainPlayer -> UpdateWeapon(deltaTime,aimAngle);
 
+        bokoblin -> Update_monster(deltaTime,*MainPlayer);
+
 
 //---------------- RENDER -------------------------------------------------------------------------------
         SDL_SetRenderDrawColor(renderer, 245, 245, 240, 255);
@@ -182,6 +188,9 @@ int main(int argc, char* argv[]) {
             Gfx::DrawUpdraftColumn(renderer, fire -> posX, 462, 50, 340, intensity);   // 340 px tall: he is held about 319 px up, so his feet (at 462 - 319 = 143) stay inside
             Gfx::DrawFire(renderer, flameTexture, fire -> posX, 462, 50, intensity);
         }
+        // The monster, behind Link. It looks at Link (isLeft), and the club goes up while its attack timer counts to 1 s (time).
+        Gfx::DrawMonster(renderer, bokoSprites, bokoblin -> posX, bokoblin -> posY, bokoblin -> isLeft, bokoblin -> health / bokoblin -> max_health,
+                         bokoblin -> state == Monster::Attack ? bokoblin -> time : 0.0f);
         Gfx::DrawWalker(renderer, linkTexture, MainPlayer -> posX, MainPlayer -> posY, MainPlayer -> state == Player::Walk);   // legs swing while he walks
         if(fire != nullptr && fire -> state == Fire::Thrown){   // the fireball while it flies, turned the way it moves
             Gfx::DrawFireball(renderer, fireballTexture, fire -> posX, fire -> posY, std::atan2(fire -> vY, fire -> vX));
@@ -203,6 +212,7 @@ int main(int argc, char* argv[]) {
         Gfx::DrawSpriteRotated(renderer, swordTexture, MainPlayer -> weapon.posX, MainPlayer -> weapon.posY, swordAngle);
         camera.End(renderer);   // the text below stays on the screen, it does not move with the world
         UI::DrawText(renderer, Gamepad::Connected() ? "CONTROLLER OK" : "NO CONTROLLER", 20, 20, 2, UI::DARK);
+        Gfx::DrawHearts(renderer, 20, 46, MainPlayer -> health, 100.0f);   // Link's health: one heart for every 20
         UI::DrawTextCentered(renderer, "ZELDA SANDBOX", Gfx::WINDOW_W / 2, 10, 2, UI::DARK);
         UI::DrawText(renderer, "ESC: QUIT", 20, 500, 2, UI::DARK);
 
@@ -213,6 +223,9 @@ int main(int argc, char* argv[]) {
     SDL_DestroyTexture(swordGlow);
     SDL_DestroyTexture(flameTexture);
     SDL_DestroyTexture(fireballTexture);
+    SDL_DestroyTexture(bokoSprites.body);
+    SDL_DestroyTexture(bokoSprites.club);
+    SDL_DestroyTexture(bokoSprites.bodyRed);
     Gamepad::Quit();
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);

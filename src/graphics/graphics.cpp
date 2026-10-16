@@ -130,12 +130,13 @@ SDL_Texture* LoadTexture(SDL_Renderer* renderer, const char* path) {
     return texture;
 }
 
-void DrawSpriteRotated(SDL_Renderer* renderer, SDL_Texture* texture, float x, float y, float angleRadians, float scale) {
+void DrawSpriteRotated(SDL_Renderer* renderer, SDL_Texture* texture, float x, float y, float angleRadians, float scale, bool flipHorizontal) {
     if (texture == nullptr) return;
     int w = 0, h = 0;
     SDL_QueryTexture(texture, nullptr, nullptr, &w, &h);
     SDL_FRect dst = {x - w * scale / 2, y - h * scale / 2, w * scale, h * scale};   // the middle of the picture lands on (x, y)
-    SDL_RenderCopyExF(renderer, texture, nullptr, &dst, angleRadians * 180.0 / 3.14159265, nullptr, SDL_FLIP_NONE);   // SDL wants degrees
+    SDL_RenderCopyExF(renderer, texture, nullptr, &dst, angleRadians * 180.0 / 3.14159265, nullptr,
+                      flipHorizontal ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE);   // SDL wants degrees
 }
 
 void DrawSprite(SDL_Renderer* renderer, SDL_Texture* texture, float x, float y, float scale, bool flipHorizontal) {
@@ -367,6 +368,147 @@ void DrawBoxStasisEffect(SDL_Renderer* renderer, float x, float y, float size, f
     if (flash > 0) {
         SDL_SetRenderDrawColor(renderer, 255, 250, 200, (Uint8)(190 * std::min(1.0f, flash)));
         SDL_RenderFillRect(renderer, &body);
+    }
+}
+
+// The monster from rectangles, for when the pictures are missing. Returns the y of its highest point (the tips of the horns).
+static float DrawMonsterRectangles(SDL_Renderer* renderer, float x, float y, bool facingLeft, float windup) {
+    const float pi = 3.14159265f;
+    float f = facingLeft ? -1.0f : 1.0f;                   // +1 looks right, -1 looks left
+    int cx = (int)x, cy = (int)y;
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    auto fillRect = [&](int rx, int ry, int rw, int rh, SDL_Color c) {
+        SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, c.a);
+        SDL_Rect r = {rx, ry, rw, rh};
+        SDL_RenderFillRect(renderer, &r);
+    };
+    const SDL_Color outline = {45, 18, 16, 255}, body = {205, 78, 52, 255}, head = {225, 98, 66, 255}, belly = {236, 172, 122, 255};
+    const SDL_Color legs = {130, 46, 34, 255}, bone = {238, 228, 204, 255};
+
+    // the club in its hand, behind the body: it points up and a little forward, and goes back over the head as the hit gets ready
+    float handX = cx + f * 22.0f, handY = cy + 6.0f;
+    float rest = -72.0f, raised = -125.0f;                // degrees on the screen for a monster that looks right (up is negative)
+    float deg = rest + (raised - rest) * windup;
+    float angle = facingLeft ? pi - deg * pi / 180.0f : deg * pi / 180.0f;
+    float clubLength = 46.0f;
+    FillTurnedRect(renderer, handX + std::cos(angle) * clubLength / 2, handY + std::sin(angle) * clubLength / 2, clubLength + 4, 13, angle, outline);
+    FillTurnedRect(renderer, handX + std::cos(angle) * clubLength / 2, handY + std::sin(angle) * clubLength / 2, clubLength, 9, angle, SDL_Color{150, 100, 55, 255});
+    FillEllipse(renderer, handX + std::cos(angle) * clubLength, handY + std::sin(angle) * clubLength, 10, 10, SDL_Color{110, 72, 40, 255});   // the heavy end
+
+    // legs, body, belly, head (each with a dark edge)
+    fillRect(cx - 17, cy + 20, 14, 18, outline);  fillRect(cx - 15, cy + 22, 10, 14, legs);
+    fillRect(cx + 3, cy + 20, 14, 18, outline);   fillRect(cx + 5, cy + 22, 10, 14, legs);
+    fillRect(cx - 24, cy - 6, 48, 32, outline);   fillRect(cx - 22, cy - 4, 44, 28, body);
+    fillRect(cx - 12, cy + 2, 24, 17, belly);
+    fillRect(cx - 22, cy - 38, 44, 38, outline);  fillRect(cx - 20, cy - 36, 40, 34, head);
+
+    // horns, eyes (they look the way it faces), mouth with two teeth
+    for (int side = -1; side <= 1; side += 2) {
+        SDL_Vertex horn[3];
+        horn[0].position = {(float)(cx + side * 19), (float)(cy - 36)};
+        horn[1].position = {(float)(cx + side * 9), (float)(cy - 36)};
+        horn[2].position = {(float)(cx + side * 17), (float)(cy - 54)};
+        for (int i = 0; i < 3; i++) { horn[i].color = bone; horn[i].tex_coord = {0, 0}; }
+        SDL_RenderGeometry(renderer, nullptr, horn, 3, nullptr, 0);
+    }
+    for (int side = -1; side <= 1; side += 2) {
+        int ex = cx + side * 9 - 5;
+        fillRect(ex, cy - 27, 11, 10, SDL_Color{255, 238, 150, 255});                          // the eye
+        fillRect(ex + 3 + (int)(f * 3), cy - 25, 4, 6, SDL_Color{30, 10, 10, 255});             // the pupil, towards where it looks
+    }
+    fillRect(cx - 11, cy - 12, 22, 6, outline);
+    fillRect(cx - 7, cy - 12, 4, 3, bone);
+    fillRect(cx + 3, cy - 12, 4, 3, bone);
+
+    // the hand, in front of the body
+    FillEllipse(renderer, handX, handY, 7, 7, SDL_Color{236, 172, 122, 255});
+
+    // getting ready to hit: the whole monster turns redder (a quiet warning at first, strong just before the hit)
+    if (windup > 0.0f) {
+        SDL_SetRenderDrawColor(renderer, 255, 40, 30, (Uint8)(150 * windup * windup));
+        SDL_Rect all = {cx - 24, cy - 38, 48, 76};
+        SDL_RenderFillRect(renderer, &all);
+    }
+    return (float)(cy - 54);
+}
+
+// The monster from its pictures (they face LEFT): the body with its feet on the ground, the club turning around the fist.
+// Returns the y of the top of the picture.
+static float DrawMonsterSprites(SDL_Renderer* renderer, const MonsterSprites& sprites, float x, float y, bool facingLeft, float windup) {
+    const float pi = 3.14159265f;
+    float f = facingLeft ? -1.0f : 1.0f;                   // +1 looks right, -1 looks left
+    int w = 0, h = 0;
+    SDL_QueryTexture(sprites.body, nullptr, nullptr, &w, &h);
+    float centerY = y + 36.0f - h / 2.0f;                  // the bottom of the picture sits on the ground, which is 36 px under (x, y)
+
+    // How far the club is turned from "pointing left, flat": 55 degrees = held up and forward, 140 = lifted back behind the head.
+    float turn = (55.0f + (140.0f - 55.0f) * windup) * pi / 180.0f;
+    auto drawClub = [&]() {
+        if (sprites.club == nullptr) return;
+        // Measured on assets/bokoblin.png (87 x 96, looking left): the fist in front is at column 20, row 60, and the handle of the
+        // club (assets/club.png, 65 x 24) is held 12 px in from its right end.
+        const float fistX = 20.0f, fistY = 60.0f, gripInset = 12.0f, clubScale = 0.85f;
+        float pivotX = facingLeft ? x - w / 2.0f + fistX : x + w / 2.0f - fistX;     // the fist, on the screen
+        float pivotY = centerY - h / 2.0f + fistY;
+        int cw = 0, ch = 0;
+        SDL_QueryTexture(sprites.club, nullptr, nullptr, &cw, &ch);
+        float half = (cw - 2.0f * gripInset) * clubScale / 2.0f;                      // from the fist to the middle of the club
+        float dirX = f * std::cos(turn), dirY = -std::sin(turn);                      // from the handle to the heavy end (on the screen)
+        DrawSpriteRotated(renderer, sprites.club, pivotX + dirX * half, pivotY + dirY * half, -f * turn, clubScale, !facingLeft);
+    };
+
+    // Held up it is behind the body (the fist is drawn over the handle, so it looks held). Once it is past straight up it goes in
+    // front, because behind the head it would be hidden just when the player should see it.
+    bool clubInFront = turn > pi / 2.0f;
+    if (!clubInFront) drawClub();
+    DrawSprite(renderer, sprites.body, x, centerY, 1.0f, !facingLeft);
+
+    // getting ready to hit: the body turns redder (a quiet warning at first, strong just before the hit); the club stays brown
+    if (windup > 0.0f && sprites.bodyRed != nullptr) {
+        SDL_SetTextureAlphaMod(sprites.bodyRed, (Uint8)(130 * windup * windup));
+        DrawSprite(renderer, sprites.bodyRed, x, centerY, 1.0f, !facingLeft);
+    }
+    if (clubInFront) drawClub();
+    return centerY - h / 2.0f;
+}
+
+void DrawMonster(SDL_Renderer* renderer, const MonsterSprites& sprites, float x, float y, bool facingLeft, float health, float windup) {
+    windup = std::clamp(windup, 0.0f, 1.0f);
+    health = std::clamp(health, 0.0f, 1.0f);
+    float top = sprites.body != nullptr ? DrawMonsterSprites(renderer, sprites, x, y, facingLeft, windup)
+                                        : DrawMonsterRectangles(renderer, x, y, facingLeft, windup);
+
+    // the health bar above its head
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor(renderer, 30, 20, 20, 220);
+    SDL_Rect back = {(int)x - 28, (int)top - 16, 56, 8};
+    SDL_RenderFillRect(renderer, &back);
+    SDL_SetRenderDrawColor(renderer, (Uint8)(230 - 150 * health), (Uint8)(60 + 160 * health), 50, 255);
+    SDL_Rect fill = {(int)x - 27, (int)top - 15, (int)(54 * health), 6};
+    SDL_RenderFillRect(renderer, &fill);
+}
+
+void DrawHearts(SDL_Renderer* renderer, int x, int y, float health, float maxHealth) {
+    // one heart is 7 x 6 "pixels", each pixel 3 x 3 on the screen
+    static const char* shape[6] = {".XX.XX.", "XXXXXXX", "XXXXXXX", ".XXXXX.", "..XXX..", "...X..."};
+    const int px = 3, hearts = (int)std::lround(maxHealth / 20.0f);
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    for (int h = 0; h < hearts; h++) {
+        float share = (health - 20.0f * h) / 20.0f;            // how much of this heart is left: 0 to 1
+        if (share < 0) share = 0;
+        if (share > 1) share = 1;
+        int left = x + h * (7 * px + 5);
+        for (int row = 0; row < 6; row++) {
+            for (int col = 0; col < 7; col++) {
+                if (shape[row][col] != 'X') continue;
+                bool full = (share >= 1.0f) || (share >= 0.5f && col < 4);            // a half heart is red on its left side only
+                SDL_Color c = full ? SDL_Color{225, 40, 50, 255} : SDL_Color{110, 100, 105, 200};
+                if (full && row == 1 && col == 1) c = SDL_Color{255, 160, 165, 255};   // a little shine
+                SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, c.a);
+                SDL_Rect r = {left + col * px, y + row * px, px, px};
+                SDL_RenderFillRect(renderer, &r);
+            }
+        }
     }
 }
 
