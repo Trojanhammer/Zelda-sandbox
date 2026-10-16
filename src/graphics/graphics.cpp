@@ -434,7 +434,7 @@ static float DrawMonsterRectangles(SDL_Renderer* renderer, float x, float y, boo
 
 // The monster from its pictures (they face LEFT): the body with its feet on the ground, the club turning around the fist.
 // Returns the y of the top of the picture.
-static float DrawMonsterSprites(SDL_Renderer* renderer, const MonsterSprites& sprites, float x, float y, bool facingLeft, float windup) {
+static float DrawMonsterSprites(SDL_Renderer* renderer, const MonsterSprites& sprites, float x, float y, bool facingLeft, float windup, float hurt) {
     const float pi = 3.14159265f;
     float f = facingLeft ? -1.0f : 1.0f;                   // +1 looks right, -1 looks left
     int w = 0, h = 0;
@@ -468,14 +468,20 @@ static float DrawMonsterSprites(SDL_Renderer* renderer, const MonsterSprites& sp
         SDL_SetTextureAlphaMod(sprites.bodyRed, (Uint8)(130 * windup * windup));
         DrawSprite(renderer, sprites.bodyRed, x, centerY, 1.0f, !facingLeft);
     }
+    // hit: the body flashes white and fades back
+    if (hurt > 0.0f && sprites.bodyWhite != nullptr) {
+        SDL_SetTextureAlphaMod(sprites.bodyWhite, (Uint8)(220 * hurt));
+        DrawSprite(renderer, sprites.bodyWhite, x, centerY, 1.0f, !facingLeft);
+    }
     if (clubInFront) drawClub();
     return centerY - h / 2.0f;
 }
 
-void DrawMonster(SDL_Renderer* renderer, const MonsterSprites& sprites, float x, float y, bool facingLeft, float health, float windup) {
+void DrawMonster(SDL_Renderer* renderer, const MonsterSprites& sprites, float x, float y, bool facingLeft, float health, float windup, float hurt) {
     windup = std::clamp(windup, 0.0f, 1.0f);
+    hurt = std::clamp(hurt, 0.0f, 1.0f);
     health = std::clamp(health, 0.0f, 1.0f);
-    float top = sprites.body != nullptr ? DrawMonsterSprites(renderer, sprites, x, y, facingLeft, windup)
+    float top = sprites.body != nullptr ? DrawMonsterSprites(renderer, sprites, x, y, facingLeft, windup, hurt)
                                         : DrawMonsterRectangles(renderer, x, y, facingLeft, windup);
 
     // the health bar above its head
@@ -486,6 +492,54 @@ void DrawMonster(SDL_Renderer* renderer, const MonsterSprites& sprites, float x,
     SDL_SetRenderDrawColor(renderer, (Uint8)(230 - 150 * health), (Uint8)(60 + 160 * health), 50, 255);
     SDL_Rect fill = {(int)x - 27, (int)top - 15, (int)(54 * health), 6};
     SDL_RenderFillRect(renderer, &fill);
+}
+
+// A disc made of square blocks (cell px wide) around (cx, cy), so that it is as chunky as the pixel art.
+static void FillBlockyDisc(SDL_Renderer* renderer, float cx, float cy, float radius, SDL_Color color, int cell) {
+    SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+    int n = (int)(radius / cell) + 1;
+    for (int j = -n; j < n; j++) {
+        for (int i = -n; i < n; i++) {
+            float mx = (i + 0.5f) * cell, my = (j + 0.5f) * cell;   // the middle of this block, measured from the middle of the disc
+            if (mx * mx + my * my > radius * radius) continue;
+            SDL_FRect block = {cx + i * cell, cy + j * cell, (float)cell, (float)cell};
+            SDL_RenderFillRectF(renderer, &block);
+        }
+    }
+}
+
+static void DrawSun(SDL_Renderer* renderer, float x, float y) {
+    const int cell = 4;
+    float pulse = 1.0f + 0.05f * std::sin(SDL_GetTicks() / 1000.0f * 1.2f);   // the glow breathes slowly
+    // The glow ADDS light (three discs, bigger and fainter), so the clouds that slide past behind it still show through it.
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_ADD);
+    FillBlockyDisc(renderer, x, y, 78.0f * pulse, SDL_Color{255, 190, 80, 12}, cell);
+    FillBlockyDisc(renderer, x, y, 60.0f * pulse, SDL_Color{255, 190, 80, 18}, cell);
+    FillBlockyDisc(renderer, x, y, 46.0f * pulse, SDL_Color{255, 200, 90, 28}, cell);
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    FillBlockyDisc(renderer, x, y, 30.0f, SDL_Color{255, 206, 92, 255}, cell);   // the sun
+    FillBlockyDisc(renderer, x, y, 22.0f, SDL_Color{255, 226, 132, 255}, cell);  // its brighter middle
+}
+
+void DrawBackground(SDL_Renderer* renderer, SDL_Texture* sky, SDL_Texture* castle, float cameraX) {
+    const float px = 3.0f;           // one picture pixel is 3 screen pixels
+    float slide = cameraX * 0.08f;   // the sky moves 8 % of what the camera moves: the farther away, the slower
+    int w = 0, h = 0;
+    if (sky != nullptr) {
+        SDL_QueryTexture(sky, nullptr, nullptr, &w, &h);
+        float shown = std::min(slide, w * px - WINDOW_W);   // never slide past the edge of the picture
+        SDL_FRect dst = {-shown, WINDOW_H - h * px, w * px, h * px};
+        SDL_RenderCopyF(renderer, sky, nullptr, &dst);
+    }
+    DrawSun(renderer, 880.0f, 76.0f);
+    if (castle != nullptr) {
+        SDL_QueryTexture(castle, nullptr, nullptr, &w, &h);
+        // on the hills (its bottom is at y = 444, 18 px above the ground), 840 px from the left of the window when the camera is at 0
+        SDL_FRect dst = {840.0f - slide - w * px / 2, 444.0f - h * px, w * px, h * px};
+        SDL_SetTextureColorMod(castle, 190, 208, 232);   // a little blue haze: it is far away
+        SDL_SetTextureAlphaMod(castle, 235);
+        SDL_RenderCopyF(renderer, castle, nullptr, &dst);
+    }
 }
 
 void DrawHearts(SDL_Renderer* renderer, int x, int y, float health, float maxHealth) {

@@ -17,6 +17,14 @@ namespace Gfx {
     // with the number (the world x) every 500 px, and a tall post at both ends of the world. Draw it right after DrawGround.
     void DrawWorldMarks(SDL_Renderer* renderer, float groundY);
 
+    // The sky behind everything: the sky with its hills (sky = assets/sky.png), Hyrule Castle on the hills (castle = assets/castle.png)
+    // and the sun, which is drawn from code in the top right corner of the window and stays there. Call it FIRST, before
+    // camera.Begin: it is not in the world, it is on the screen, and it only slides a little when the camera moves (8 % of the way
+    // the camera goes, so it looks very far away; the sky and the castle slide together, so the castle stays on its hill).
+    // Both pictures are drawn with 3 screen pixels for every picture pixel, the sky with its bottom on the bottom of the window
+    // (the ground covers the lowest part of it). Either one can be nullptr: it is left out.
+    void DrawBackground(SDL_Renderer* renderer, SDL_Texture* sky, SDL_Texture* castle, float cameraX);
+
     // A small dark square with its middle at (x, y). Stands for the hand the sword is thrown from.
     void DrawHand(SDL_Renderer* renderer, float x, float y);
 
@@ -77,6 +85,7 @@ namespace Gfx {
         SDL_Texture* body = nullptr;      // assets/bokoblin.png, LoadTexture
         SDL_Texture* club = nullptr;      // assets/club.png, LoadTexture (the heavy end on the left, the handle on the right)
         SDL_Texture* bodyRed = nullptr;   // the body in flat red: LoadSilhouette("assets/bokoblin.png", red). Laid over the body while it winds up
+        SDL_Texture* bodyWhite = nullptr; // the same in flat white: LoadSilhouette(..., white). Laid over the body when it is hurt
     };
 
     // A monster (a Bokoblin): a red body with horns, a club in its fist, and a health bar above it. Its middle is (x, y), the same
@@ -84,7 +93,9 @@ namespace Gfx {
     // it stands on the ground and reaches higher). facingLeft = looking to the left. health goes from 1 (full) to 0 (the bar is empty).
     // windup goes from 0 to 1 while it gets ready to hit: the club goes up and back over its head and the body turns redder, so the
     // player can see the hit coming (use the attack timer of the monster, 0 while it is not attacking).
-    void DrawMonster(SDL_Renderer* renderer, const MonsterSprites& sprites, float x, float y, bool facingLeft, float health, float windup);
+    // hurt goes from 1 (it was just hit) to 0: the body flashes white and fades back (use hurt_time / hurt_cooldown). Pictures only.
+    void DrawMonster(SDL_Renderer* renderer, const MonsterSprites& sprites, float x, float y, bool facingLeft, float health, float windup,
+                     float hurt = 0.0f);
 
     // Link's hearts for the screen (draw them after camera.End): one heart for every 20 health, so a health of 100 is five full hearts,
     // 70 is three and a half, and what is lost is shown as grey hearts. (x, y) is the top-left corner of the first heart.

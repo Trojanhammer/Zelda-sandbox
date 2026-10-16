@@ -24,6 +24,8 @@ int main(int argc, char* argv[]) {
     SDL_Texture* swordGlow = Gfx::LoadSilhouette(renderer, "assets/master-sword.png", SDL_Color{255, 205, 40, 255});   // the same shape in flat yellow, for the recall glow
     SDL_Texture* flameTexture = Gfx::LoadTexture(renderer, "assets/flame.png");         // the fire on the grass
     SDL_Texture* fireballTexture = Gfx::LoadTexture(renderer, "assets/fireball.png");   // what is thrown
+    SDL_Texture* skyTexture = Gfx::LoadTexture(renderer, "assets/sky.png");             // the sky with its hills, behind everything
+    SDL_Texture* castleTexture = Gfx::LoadTexture(renderer, "assets/castle.png");       // Hyrule Castle on the hills
     Gfx::MonsterSprites bokoSprites = {Gfx::LoadTexture(renderer, "assets/bokoblin.png"), Gfx::LoadTexture(renderer, "assets/club.png"),
                                        Gfx::LoadSilhouette(renderer, "assets/bokoblin.png", SDL_Color{255, 40, 30, 255})};   // body, club, the body in red (for the wind-up)
     bool running = true;
@@ -162,6 +164,7 @@ int main(int argc, char* argv[]) {
         cameraLinger = boxFlying ? 1.5f : (cameraLinger > deltaTime ? cameraLinger - deltaTime : 0.0f);
         float cameraTarget = (cameraLinger > 0.0f) ? metal_box -> posX : MainPlayer -> posX;
         camera.Follow(cameraTarget, deltaTime);
+        Gfx::DrawBackground(renderer, skyTexture, castleTexture, camera.x);   // first, on the screen (not in the world): sky, sun, castle
         camera.Begin(renderer);   // from here to camera.End everything is drawn at its world position
 
         Gfx::DrawGround(renderer, 462);   // the sword lands with its middle at y = 450 (Weapon.cpp) and is 25 px tall, so the surface is at 462
@@ -223,6 +226,8 @@ int main(int argc, char* argv[]) {
     SDL_DestroyTexture(swordGlow);
     SDL_DestroyTexture(flameTexture);
     SDL_DestroyTexture(fireballTexture);
+    SDL_DestroyTexture(skyTexture);
+    SDL_DestroyTexture(castleTexture);
     SDL_DestroyTexture(bokoSprites.body);
     SDL_DestroyTexture(bokoSprites.club);
     SDL_DestroyTexture(bokoSprites.bodyRed);
