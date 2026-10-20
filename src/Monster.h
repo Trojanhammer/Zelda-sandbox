@@ -14,6 +14,7 @@ class Monster : public PhysicsObject{
         float time = 0.0f; // count time for attack
         float patrol_limit = 3.0f; // 3 seconds limit time for patrol
         float patrol_time_count = 0.0f;
+        std::vector<PhysicsObject*> heard; // store new pointer to the object it reacts
         enum State {
             Idle,
             Patrol,
@@ -25,10 +26,11 @@ class Monster : public PhysicsObject{
     public:
         Monster();
         bool Detect_player(Player& player);
-        bool Detect_danger(Player& player); // detect if player tries to attack from afar using weapon
+        bool Detect_danger(PhysicsObject& obj); // detect if player tries to attack from afar using weapon
         void Patrolling(float deltaTime);
         void Chase_player(float deltaTime,Player& player);
         void Attack_player(float deltaTime,Player& player);
         void Back_base(float deltaTime);
-        void Update_monster(float deltaTime,Player& player);
+        void Update_monster(float deltaTime,PhysicsObject& obj,Player& player);
+        bool At_Rest(PhysicsObject& obj);
 };

@@ -1,5 +1,6 @@
 #include "Monster.h"
 #include <cmath>
+#include <algorithm>
 
 Monster::Monster(){
     baseposX = 700;
@@ -7,6 +8,11 @@ Monster::Monster(){
     posX = 700;
     posY = 426;
     groundY = 426;
+}
+
+bool Monster::At_Rest(PhysicsObject& obj){ // check obj idle or not
+    if(obj.vX ==0 && obj.vY ==0 && obj.posY >= obj.groundY) return true;
+    else return false;
 }
 
 void Monster::Chase_player(float deltaTime,Player& player){
@@ -50,22 +56,19 @@ void Monster::Attack_player(float deltaTime,Player& player){ // run on every sec
     }
 }
 
-bool Monster::Detect_danger(Player& player){
-    
-    if(player.weapon.state == Weapon::Idle && player.weapon.posY == player.weapon.groundY){
-        float distance;
-        distance = std::abs(player.weapon.posX - posX);
-        isLeft = player.weapon.posX < posX;
+bool Monster::Detect_danger(PhysicsObject& obj){
+    if(std::find(heard.begin(), heard.end(), &obj) != heard.end()) return false; // if the obj is in note, then ignore
+    float weapon_distance;
+    weapon_distance = std::abs(obj.posX - posX);
+    if(At_Rest(obj) && weapon_distance < 100){
+        isLeft = obj.posX < posX;
         vX = 20; // set speed of patrol
         if(isLeft){
             vX = -vX;
         }
-
-        if(distance < 100){
-            state = Monster::Patrol;
-            return true;
-        }
-        return false;
+        heard.push_back(&obj); // store new pointer
+        state = Monster::Patrol;
+        return true;
     }
     else
         return false;
@@ -94,11 +97,11 @@ void Monster::Back_base(float deltaTime){
 }
 
 
-void Monster::Update_monster(float deltaTime, Player& player){
+void Monster::Update_monster(float deltaTime, PhysicsObject& obj,Player& player){
     switch(state){
         case Monster::Idle :
             if(Detect_player(player)) state = Monster::Chasing;
-            else if(Detect_danger(player)) state = Monster::Patrol;
+            else if(Detect_danger(obj)) state = Monster::Patrol;
             break;
         
         case Monster::Chasing :

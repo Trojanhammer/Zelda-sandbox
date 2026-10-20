@@ -150,7 +150,7 @@ int main(int argc, char* argv[]) {
         
         MainPlayer -> UpdateWeapon(deltaTime,aimAngle);
 
-        bokoblin -> Update_monster(deltaTime,*MainPlayer);
+        bokoblin -> Update_monster(deltaTime,MainPlayer -> weapon,*MainPlayer);
 
 
 //---------------- RENDER -------------------------------------------------------------------------------
