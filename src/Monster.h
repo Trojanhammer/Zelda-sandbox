@@ -31,6 +31,7 @@ class Monster : public PhysicsObject{
         void Chase_player(float deltaTime,Player& player);
         void Attack_player(float deltaTime,Player& player);
         void Back_base(float deltaTime);
-        void Update_monster(float deltaTime,PhysicsObject& obj,Player& player);
+        void Update_monster(float deltaTime,std::vector<PhysicsObject*>& throwables,Player& player); // send vector of throwables(objects in motion basically) that exist in each frame
+        // std::vector<PhysicsObject*> = this vector stores pointer . & throwables means we pass by reference since a vector is a object by default
         bool At_Rest(PhysicsObject& obj);
 };

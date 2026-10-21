@@ -39,6 +39,9 @@ int main(int argc, char* argv[]) {
 
     auto metal_box = std::make_unique<Box>();
     auto bokoblin = std::make_unique<Monster>();
+    std::vector<PhysicsObject*> throwables = {metal_box.get(), &(MainPlayer -> weapon)};
+    // use .get() to get the mem address of unq ptr
+    // weapon obj lives directly inside mainplayer obj, so just points towards it and get the address by using (&)
     Camera camera;   // see graphics/camera.h
     auto lastTime = std::chrono::high_resolution_clock::now();
 
@@ -150,7 +153,7 @@ int main(int argc, char* argv[]) {
         
         MainPlayer -> UpdateWeapon(deltaTime,aimAngle);
 
-        bokoblin -> Update_monster(deltaTime,MainPlayer -> weapon,*MainPlayer);
+        bokoblin -> Update_monster(deltaTime,throwables,*MainPlayer);
 
 
 //---------------- RENDER -------------------------------------------------------------------------------

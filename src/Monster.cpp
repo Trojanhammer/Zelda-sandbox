@@ -64,7 +64,7 @@ bool Monster::Detect_danger(PhysicsObject& obj){
         isLeft = obj.posX < posX;
         vX = 20; // set speed of patrol
         if(isLeft){
-            vX = -vX;
+            vX = -vX; 
         }
         heard.push_back(&obj); // store new pointer
         state = Monster::Patrol;
@@ -97,11 +97,19 @@ void Monster::Back_base(float deltaTime){
 }
 
 
-void Monster::Update_monster(float deltaTime, PhysicsObject& obj,Player& player){
+void Monster::Update_monster(float deltaTime, std::vector<PhysicsObject*> &throwables,Player& player){
+    //
     switch(state){
         case Monster::Idle :
             if(Detect_player(player)) state = Monster::Chasing;
-            else if(Detect_danger(obj)) state = Monster::Patrol;
+            else{
+                for(PhysicsObject* thing : throwables){ // make another pointer that points towards a reference vector
+                    if(Detect_danger(*thing)) {
+                        state = Monster::Patrol;
+                        break;
+                    }
+                }
+            }
             break;
         
         case Monster::Chasing :
