@@ -155,7 +155,6 @@ int main(int argc, char* argv[]) {
 
         bokoblin -> Update_monster(deltaTime,throwables,*MainPlayer);
 
-
 //---------------- RENDER -------------------------------------------------------------------------------
         SDL_SetRenderDrawColor(renderer, 245, 245, 240, 255);
         SDL_RenderClear(renderer);

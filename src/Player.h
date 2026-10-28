@@ -6,6 +6,7 @@ class Player : public PhysicsObject {
     public:
         float throwing_speed = 800; // 800px/s
         float walking_speed = 150;
+        float max_health = 100;
         float health = 100;
         float attack_power = 50;
         
@@ -14,7 +15,8 @@ class Player : public PhysicsObject {
         static constexpr float HandY = -12.0f;
         enum State {
             Idle,
-            Walk
+            Walk,
+            Die
         };
         State state = Idle;
         bool RightWalk = true; 

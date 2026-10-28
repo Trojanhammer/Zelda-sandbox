@@ -50,6 +50,9 @@ void Monster::Attack_player(float deltaTime,Player& player){ // run on every sec
     if(time >= 1.0f) {
         player.health -= attack_power;
         time = 0.0f;
+        if(player.health <=0){
+            player.health = player.max_health; // relive
+        }
     }
     else{
         return;
@@ -100,7 +103,6 @@ void Monster::Back_base(float deltaTime){
 void Monster::Update_monster(float deltaTime, std::vector<PhysicsObject*> &throwables,Player& player){
     //
     heard.erase(std::remove_if(heard.begin(),heard.end(), [&](PhysicsObject* thing) { return !At_Rest(*thing);}) , heard.end());
-
     switch(state){
         case Monster::Idle :
             if(Detect_player(player)) state = Monster::Chasing;

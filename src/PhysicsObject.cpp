@@ -27,4 +27,9 @@ void PhysicsObject::OpposeGravity(float deltaTime){ // groundY is y axis when on
     lift = 0; // reset again lift
 }
 
-
+float PhysicsObject::MeasureSpeed(float deltaTime){
+    float dx = posX - prevX, dy = posY - prevY;
+    prevX = posX;
+    prevY = posY;
+    return std::sqrt(dx * dx + dy * dy) / deltaTime; // return speed
+}

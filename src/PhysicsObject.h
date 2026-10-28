@@ -9,10 +9,13 @@ class PhysicsObject {
         float baseposY = 0;  
         float vX =0;
         float vY =0;
+        float prevX = 0; // previous pos X & Y for measurespeed fx
+        float prevY = 0;
         float lift = 0; // acceleration that oppose gravity (px/s square)
         static constexpr float gravity = 980.0f; // 98px per second square
 
     public:
         void UpdatePosition(float deltaTime);
         void OpposeGravity(float deltaTime);
+        float MeasureSpeed(float deltaTime); 
 };

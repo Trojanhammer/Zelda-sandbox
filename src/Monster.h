@@ -9,7 +9,7 @@ class Monster : public PhysicsObject{
         float attack_power = 20;
         float distance = 0 ; // distance from enemy to player
         float step = 0.0f; // distance on how far enemy has chase
-        static constexpr float distance_attack = 60; // enemy can only attack when in 20px from player
+        static constexpr float distance_attack = 60; // enemy can only attack when in 60px from player
         bool isLeft = true; // if player is on left of enemy
         float time = 0.0f; // count time for attack
         float patrol_limit = 3.0f; // 3 seconds limit time for patrol
